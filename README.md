@@ -6,4 +6,4 @@ To use the current C# project, simply use the `.cs` files from the **FlexivRobot
 ## 项目介绍
 本项目是一个Windows10 下Visual Studio 2019的解决方案，使用P-Invoke方式调用[flexiv_rdk](https://github.com/flexivrobotics/flexiv_rdk)中的C++接口，封装了一些C#接口。**FlexivRobotCSharp**文件夹是一个C#项目，其中Examples文件夹下是示例程序，使用FlexivRdk中的接口。FlexivRdk文件夹下是封装的C#接口，调用FlexivRobotDll中的接口。Program.cs是测试程序，使用Examples中的例程。**FlexivRobotDll**文件夹是一个C++项目，用于包装**flexiv_rdk**的C++接口，根据其静态库生成动态库。**ReleaseDll**文件夹下包含已经编译好的动态链接库。
 ## 使用方法
-当前C#项目直接使用**FlexivRobotCSharp/FlexivRdk**文件夹下的.cs文件，将ReleaseDll下的动态链接库放到当前C#生成.exe文件的目录，即可运行。当前项目已将**FlexivRobotCSharp**和**FlexivRobotDll**输出路径设置为同一个文件夹，将**FlexivRobotCSharp**设为启动项目。对**FlexivRobotDll**生成会得到所需的动态链接库，在其项目属性中可以将C/C++附加包含目录，链接器中的附加库目录和附加依赖项中的配置项换成自己的本地设置。用户可以自行扩展所需要的接口。al Studio 2019解决方案，使用P-Invoke方式调用[flexiv_rdk](https://github.com/flexivrobotics/flexiv_rdk)中的C++接口，封装了一些C#接口。
+当前C#项目直接使用**FlexivRobotCSharp/FlexivRdk**文件夹下的.cs文件，将ReleaseDll下的动态链接库放到当前C#生成.exe文件的目录，即可运行。当前项目已将**FlexivRobotCSharp**和**FlexivRobotDll**输出路径设置为同一个文件夹，将**FlexivRobotCSharp**设为启动项目。对**FlexivRobotDll**生成会得到所需的动态链接库，在其项目属性中可以将C/C++附加包含目录，链接器中的附加库目录和附加依赖项中的配置项换成自己的本地设置。用户可以自行扩展所需要的接口。
