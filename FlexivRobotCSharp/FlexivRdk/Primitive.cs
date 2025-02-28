@@ -179,6 +179,18 @@ namespace FlexivRdk
         }
     }
 
+    public struct CmdMoveC                 // MoveC元操作输入参数
+    {
+        public Coord? target;               // 必选，1.目标点
+        public Coord? middlePose;           // 必选，2.中间点
+        public double? vel;
+        public int? targetTolerLevel;
+        public double? acc;
+        public double? angVel;
+        public double? jerk;
+        public List<double> configOptObj;
+    }
+
     public struct CmdContact                          // Contact元操作输入参数
     {
         public string contactCoord;                   // 可选，1.接触方向参考坐标系，默认值：world，范围：[world tcp]

@@ -156,6 +156,19 @@ namespace FlexivRdk
                                          bool block_until_started,
                                          ref FlexivError error);
 
+        [DllImport(_flexiv_robot_dll)]
+        private static extern void MoveC(IntPtr robot,
+                                         ref Coord target,
+                                         ref Coord middlePose,
+                                         double vel, bool has_vel,
+                                         int targetTolerLevel, bool has_targetTolerLevel,
+                                         double acc, bool has_acc,
+                                         double angVel, bool has_angVel,
+                                         double jerk, bool has_jerk,
+                                         IntPtr configOptObj_ptr, int configOptObj_len, bool has_configOptObj,
+                                         bool block_until_started,
+                                         ref FlexivError error);
+
         [DllImport(_flexiv_robot_dll, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern void Contact(IntPtr robot, string contactCoord, bool has_contactCoord,
                                            IntPtr contactDir, int dir_len, bool has_contactDir,
@@ -959,6 +972,53 @@ namespace FlexivRdk
                   block_until_started,
                   ref error);
             Marshal.FreeHGlobal(way_ptr);
+            ThrowRdkException(error);
+        }
+
+        // 空间运动，圆弧运动
+        public void ExecuteMoveC(CmdMoveC movec, bool block_until_started = true)
+        {
+            Coord target = new();
+            if (movec.target.HasValue)
+            {
+                target = movec.target.Value;
+            }
+            else
+            {
+                throw new ArgumentException("MoveC target parameter can not be null.");
+            }
+            Coord middlePose = new();
+            if (movec.middlePose.HasValue)
+            {
+                middlePose = movec.middlePose.Value;
+            }
+            else
+            {
+                throw new ArgumentException("MoveC middlePose parameter can not be null.");
+            }
+            bool has_vel = false;                            // 3
+            double vel = 0;
+            DoubleToOpt(movec.vel, ref has_vel, ref vel);
+            bool has_targetTolerLevel = false;               // 4
+            int targetTolerLevel = 0;
+            IntToOpt(movec.targetTolerLevel, ref has_targetTolerLevel, ref targetTolerLevel);
+            bool has_acc = false;                            // 5
+            double acc = 0;
+            DoubleToOpt(movec.acc, ref has_acc, ref acc);
+            bool has_angVel = false;
+            double angVel = 0;                               // 6
+            DoubleToOpt(movec.angVel, ref has_angVel, ref angVel);
+            bool has_jerk = false;
+            double jerk = 0;                                 // 7               
+            DoubleToOpt(movec.jerk, ref has_jerk, ref jerk);
+            bool has_configOptObj = false;
+            IntPtr configOptObj_ptr = IntPtr.Zero;           // 8
+            int configOptObj_len = 3;
+            LstDoubleToOpt(movec.configOptObj, ref has_configOptObj, ref configOptObj_ptr, ref configOptObj_len);
+            FlexivError error = new FlexivError();
+            MoveC(_flexiv_robot_ptr, ref target, ref middlePose, vel, has_vel, targetTolerLevel, has_targetTolerLevel,
+                  acc, has_acc, angVel, has_angVel, jerk, has_jerk, configOptObj_ptr, configOptObj_len, has_configOptObj,
+                  block_until_started, ref error);
             ThrowRdkException(error);
         }
 

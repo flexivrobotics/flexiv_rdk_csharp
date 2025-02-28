@@ -711,6 +711,46 @@ EXPORT_API void MoveJ(flexiv::rdk::Robot* robot,
 #endif
 }
 
+EXPORT_API void MoveC(flexiv::rdk::Robot* robot,
+	W_Coord* target,
+	W_Coord* middlePose,
+	double vel, bool has_vel,
+	int targetTolerLevel, bool has_targetTolerLevel,
+	double acc, bool has_acc,
+	double angVel, bool has_angVel,
+	double jerk, bool has_jerk,
+	double* configOptObj, int config_len, bool has_config,
+	bool block_until_started,
+	FlexivError* error) {
+	try {
+		std::map<std::string, flexiv::rdk::FlexivDataTypes> input_params;
+		input_params["target"] = ToRdkCoord(*target);
+		input_params["middlePose"] = ToRdkCoord(*middlePose);
+		if (has_vel) input_params["vel"] = vel;
+		if (has_targetTolerLevel) input_params["targetTolerLevel"] = targetTolerLevel;
+		if (has_acc) input_params["acc"] = acc;
+		if (has_angVel) input_params["angVel"] = angVel;
+		if (has_jerk) input_params["jerk"] = jerk;
+		if (has_config) {
+			if (config_len != 3) {
+				error->error_code = 1;
+				const char* error_str = "configOptObj parameters size should be equal to 3.";
+				std::strncpy(error->error_msg, error_str, sizeof(error->error_msg) - 1);
+				error->error_msg[sizeof(error->error_msg) - 1] = '\0';
+				return;
+			}
+			std::vector<double> config(configOptObj, configOptObj + config_len);
+			input_params["configOptObj"] = config;
+		}
+		robot->ExecutePrimitive("MoveC", input_params, block_until_started);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 EXPORT_API void Contact(flexiv::rdk::Robot* robot, const char* contactCoord, bool has_contactCoord,
 	double* contactDir, int dir_len, bool has_contactDir,
 	double contactVel, bool has_contactVel,
