@@ -174,7 +174,7 @@ namespace FlexivRdk
                                            IntPtr contactDir, int dir_len, bool has_contactDir,
                                            double contactVel, bool has_contactVel,
                                            double maxContactForce, bool has_maxContactForce,
-                                           bool enableFineContact, bool has_enbaleFineContact,
+                                           bool enableFineContact, bool has_enableFineContact,
                                            IntPtr waypoint, int way_len, bool has_way,
                                            IntPtr vels, int vel_len, bool has_vels,
                                            IntPtr accs, int acc_len, bool has_accs,
@@ -1040,6 +1040,7 @@ namespace FlexivRdk
             {
                 has_contactCoord = true;
                 contactCoord = contact.contactCoord;
+                Console.WriteLine("ssss");
             }
             IntPtr dir_ptr = IntPtr.Zero;
             int dir_len = 0;
@@ -1127,7 +1128,7 @@ namespace FlexivRdk
             {
                 acc_len = contact.acc.Count;
                 has_acc = true;
-                double[] array = contact.contactDir.ToArray();
+                double[] array = contact.acc.ToArray();
                 GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
                 acc_ptr = handle.AddrOfPinnedObject();
             }
@@ -1136,6 +1137,7 @@ namespace FlexivRdk
             if (contact.zoneRadius == null || contact.zoneRadius.Count == 0)
             {
                 has_zoneRadius = false;
+                contact.zoneRadius = new();
             }
             else
             {
