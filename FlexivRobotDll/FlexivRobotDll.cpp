@@ -445,6 +445,52 @@ EXPORT_API void set_velocity_scale(flexiv::rdk::Robot* robot, int velocity_scale
 	}
 }
 
+EXPORT_API int curr_prim_specified_integer(flexiv::rdk::Robot* robot, const char* key,
+	bool& flag, FlexivError* error) {
+	try {
+		auto pt_states = robot->primitive_states();
+		std::string chk_key(key);
+		int res = 0;
+		if (pt_states.find(chk_key) != pt_states.end()) {
+			flag = false;
+			res = std::get<int>(pt_states[chk_key]);
+		}
+		else {
+			flag = true;
+		}
+		error->error_code = 0;
+		return res;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return 0;
+	}
+}
+
+EXPORT_API double curr_prim_specified_double(flexiv::rdk::Robot* robot, const char* key,
+	bool& flag, FlexivError* error) {
+	try {
+		auto pt_states = robot->primitive_states();
+		std::string chk_key(key);
+		double res = 0;
+		if (pt_states.find(chk_key) != pt_states.end()) {
+			flag = false;
+			res = std::get<double>(pt_states[chk_key]);
+		}
+		else {
+			flag = true;
+		}
+		error->error_code = 0;
+		return res;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return 0;
+	}
+}
+
 EXPORT_API bool HasReachedTarget(flexiv::rdk::Robot* robot, FlexivError* error) {
 	try {
 		auto pt_states = robot->primitive_states();

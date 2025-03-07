@@ -106,6 +106,12 @@ namespace FlexivRdk
         [DllImport(_flexiv_robot_dll)]
         private static extern void set_velocity_scale(IntPtr robot, int velocity_scale, ref FlexivError error);
 
+        [DllImport(_flexiv_robot_dll)]
+        private static extern int curr_prim_specified_integer(IntPtr robot, string key, ref bool flag, ref FlexivError error);
+
+        [DllImport(_flexiv_robot_dll)]
+        private static extern double curr_prim_specified_double(IntPtr robot, string key, ref bool flag, ref FlexivError error);
+
         [DllImport(_flexiv_robot_dll, EntryPoint = "HasReachedTarget")]
         private static extern bool has_reached_target(IntPtr robot, ref FlexivError error);
 
@@ -742,6 +748,26 @@ namespace FlexivRdk
             FlexivError error = new FlexivError();
             set_velocity_scale(_flexiv_robot_ptr, velocity_scale, ref error);
             ThrowRdkException(error);
+        }
+
+        public int? CurrPrimSpecifiedInteger(string key)
+        {
+            FlexivError error = new FlexivError();
+            bool flag = false;
+            int result = curr_prim_specified_integer(_flexiv_robot_ptr, key, ref flag, ref error);
+            ThrowRdkException(error);
+            if (flag) return null;
+            return result;
+        }
+
+        public double? CurrPrimSpecifiedDouble(string key)
+        {
+            FlexivError error = new FlexivError();
+            bool flag = false;
+            double result = curr_prim_specified_double(_flexiv_robot_ptr, key, ref flag, ref error);
+            ThrowRdkException(error);
+            if (flag) return null;
+            return result;
         }
 
         public bool CurrPrimHasReachedTarget()
