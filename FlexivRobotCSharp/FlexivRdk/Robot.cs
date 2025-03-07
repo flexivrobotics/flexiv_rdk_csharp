@@ -1611,7 +1611,7 @@ namespace FlexivRdk
             DoubleToOpt(mate.addSlideMatingAcc, ref has_addSlideMatingAcc, ref addSlideMatingAcc);
             bool has_addRotateMatingRange = false;  // 17
             double addRotateMatingRange = 0;
-            DoubleToOpt(mate.addRotateMatingRange, ref has_addRotateMatingRange, ref addSlideMatingRange);
+            DoubleToOpt(mate.addRotateMatingRange, ref has_addRotateMatingRange, ref addRotateMatingRange);
             bool has_addRotateMatingVel = false;    // 18
             double addRotateMatingVel = 0;
             DoubleToOpt(mate.addRotateMatingVel, ref has_addRotateMatingVel, ref addRotateMatingVel);
