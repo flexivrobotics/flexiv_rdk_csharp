@@ -1,8 +1,6 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 #define EXPORT_API extern "C" __declspec(dllexport)
 
-#define RDK_VERSION 15
-
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -688,7 +686,7 @@ EXPORT_API void	MoveL(flexiv::rdk::Robot* robot,
 		input_params["configOptObj"] = config;
 	}
 	try {
-		robot->ExecutePrimitive("MoveL", input_params, block_until_started);
+		robot->ExecutePrimitive("MoveL", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -713,28 +711,18 @@ EXPORT_API void MoveJ(flexiv::rdk::Robot* robot,
 		error->error_msg[sizeof(error->error_msg) - 1] = '\0';
 		return;
 	}
-#if RDK_VERSION == 15       // 使用ExecutePrimitive字符串接口
+
 	std::map<std::string, flexiv::rdk::FlexivDataTypes> input_params;
-	std::vector<double> tgt{ target->A1, target->A2, target->A3, target->A4, target->A5, target->A6, target->A7,
-							 target->E1, target->E2, target->E3, target->E4, target->E5, target->E6 };
+	flexiv::rdk::JPos tgt({ target->A1, target->A2, target->A3, target->A4, target->A5, target->A6, target->A7 },
+		{ target->E1, target->E2, target->E3, target->E4, target->E5, target->E6 });
 	input_params["target"] = tgt;
 	if (has_way) {
-		std::vector<double> waypoints;
+		std::vector<flexiv::rdk::JPos> waypoints;
+		// std::vector<double> waypoints;
 		for (int i = 0; i < way_len; ++i) {
 			W_Joint* jnt = waypoint + i;
-			waypoints.push_back(jnt->A1);
-			waypoints.push_back(jnt->A2);
-			waypoints.push_back(jnt->A3);
-			waypoints.push_back(jnt->A4);
-			waypoints.push_back(jnt->A5);
-			waypoints.push_back(jnt->A6);
-			waypoints.push_back(jnt->A7);
-			waypoints.push_back(jnt->E1);
-			waypoints.push_back(jnt->E2);
-			waypoints.push_back(jnt->E3);
-			waypoints.push_back(jnt->E4);
-			waypoints.push_back(jnt->E5);
-			waypoints.push_back(jnt->E6);
+			waypoints.push_back(flexiv::rdk::JPos({ jnt->A1, jnt->A2, jnt->A3, jnt->A4, jnt->A5, jnt->A6, jnt->A7 },
+				{ jnt->E1, jnt->E2, jnt->E3, jnt->E4, jnt->E5, jnt->E6 }));
 		}
 		input_params["waypoints"] = waypoints;
 	}
@@ -743,18 +731,14 @@ EXPORT_API void MoveJ(flexiv::rdk::Robot* robot,
 	if (has_targetTolerLevel) input_params["targetTolerLevel"] = targetTolerLevel;
 	if (has_relateMove) input_params["enableRelativeMove"] = has_relateMove ? 1 : 0;
 	try {
-		robot->ExecutePrimitive("MoveJ", input_params, block_until_started);
+		robot->ExecutePrimitive("MoveJ", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
 	}
-#elif RDK_VERSION == 16
 
-#else
-
-#endif
 }
 
 EXPORT_API void MoveC(flexiv::rdk::Robot* robot,
@@ -788,7 +772,7 @@ EXPORT_API void MoveC(flexiv::rdk::Robot* robot,
 			std::vector<double> config(configOptObj, configOptObj + config_len);
 			input_params["configOptObj"] = config;
 		}
-		robot->ExecutePrimitive("MoveC", input_params, block_until_started);
+		robot->ExecutePrimitive("MoveC", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -841,10 +825,10 @@ EXPORT_API void Contact(flexiv::rdk::Robot* robot, const char* contactCoord, boo
 
 		if (has_jerk) input_params["jerk"] = jerk;
 		if (input_params.empty()) {
-			robot->ExecutePrimitive("Contact", std::map<std::string, flexiv::rdk::FlexivDataTypes> {});
+			robot->ExecutePrimitive("Contact", std::map<std::string, flexiv::rdk::FlexivDataTypes> {}, {});
 		}
 		else {
-			robot->ExecutePrimitive("Contact", input_params, block_until_started);
+			robot->ExecutePrimitive("Contact", input_params, {}, block_until_started);
 		}
 		error->error_code = 0;
 	}
@@ -877,7 +861,7 @@ EXPORT_API void ContactAlign(flexiv::rdk::Robot* robot,
 		}
 		if (has_alignVelScale) input_params["alignVelScale"] = alignVelScale;
 		if (has_deadbandScale) input_params["deadbandScale"] = deadbandScale;
-		robot->ExecutePrimitive("ContactAlign", input_params, block_until_started);
+		robot->ExecutePrimitive("ContactAlign", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -967,7 +951,7 @@ EXPORT_API void ForceHybrid(flexiv::rdk::Robot* robot,
 			std::vector<double> maxVelForceDir(maxVelForceDir_ptr, maxVelForceDir_ptr + maxVelForceDir_len);
 			input_params["maxVelForceDir"] = maxVelForceDir;
 		}
-		robot->ExecutePrimitive("ForceHybrid", input_params, block_until_started);
+		robot->ExecutePrimitive("ForceHybrid", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1026,7 +1010,7 @@ EXPORT_API void ForceComp(flexiv::rdk::Robot* robot,
 			std::vector<double> configOptObj(configOptObj_ptr, configOptObj_ptr + configOptObj_len);
 			input_params["configOptObj"] = configOptObj;
 		}
-		robot->ExecutePrimitive("ForceComp", input_params, block_until_started);
+		robot->ExecutePrimitive("ForceComp", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1074,7 +1058,7 @@ EXPORT_API void SearchHole(flexiv::rdk::Robot* robot,
 		if (has_searchImmed) input_params["searchImmed"] = searchImmed;
 		if (has_searchStiffRatio) input_params["searchStiffRatio"] = searchStiffRatio;
 		if (has_maxVelForceDir) input_params["maxVelForceDir"] = maxVelForceDir;
-		robot->ExecutePrimitive("SearchHole", input_params, block_until_started);
+		robot->ExecutePrimitive("SearchHole", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1106,7 +1090,7 @@ EXPORT_API void CheckPiH(flexiv::rdk::Robot* robot,
 		if (has_searchForce) input_params["searchForce"] = searchForce;
 		if (has_searchVel) input_params["searchVel"] = searchVel;
 		if (has_linearSearchOnly) input_params["linearSearchOnly"] = linearSearchOnly;
-		robot->ExecutePrimitive("CheckPiH", input_params, block_until_started);
+		robot->ExecutePrimitive("CheckPiH", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1135,7 +1119,7 @@ EXPORT_API void InsertComp(flexiv::rdk::Robot* robot,
 		if (has_deadbandScale) input_params["deadbandScale"] = deadbandScale;
 		if (has_insertVel) input_params["insertVel"] = insertVel;
 		if (has_compVelScale) input_params["compVelScale"] = compVelScale;
-		robot->ExecutePrimitive("InsertComp", input_params, block_until_started);
+		robot->ExecutePrimitive("InsertComp", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1198,7 +1182,7 @@ EXPORT_API void Mate(flexiv::rdk::Robot* robot,
 		if (has_addRotateMatingVel) input_params["addRotateMatingVel"] = addRotateMatingVel;
 		if (has_addRotateMatingAcc) input_params["addRotateMatingAcc"] = addRotateMatingAcc;
 		if (has_maxVelForceDir) input_params["maxVelForceDir"] = maxVelForceDir;
-		robot->ExecutePrimitive("Mate", input_params, block_until_started);
+		robot->ExecutePrimitive("Mate", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1226,7 +1210,7 @@ EXPORT_API void FastenScrew(flexiv::rdk::Robot* robot,
 		if (has_diScrewInHole) input_params["diScrewInHole"] = std::string(diScrewInHole);
 		if (has_diFastenFinish) input_params["diFastenFinish"] = std::string(diFastenFinish);
 		if (has_diScrewJam) input_params["diScrewJam"] = std::string(diScrewJam);
-		robot->ExecutePrimitive("FastenScrew", input_params, block_until_started);
+		robot->ExecutePrimitive("FastenScrew", input_params, {}, block_until_started);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {

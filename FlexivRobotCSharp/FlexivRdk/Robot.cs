@@ -32,7 +32,7 @@ namespace FlexivRdk
             public string ptr;
         }
 
-        private const string _flexiv_robot_dll = "flexiv_rdk_v150.dll";
+        private const string _flexiv_robot_dll = "flexiv_rdk_v151.dll";
 
         [DllImport(_flexiv_robot_dll, EntryPoint = "CreateFlexivRobot")]
         private static extern IntPtr CreateFlexivRobot(string robot_sn, ref FlexivError error);
