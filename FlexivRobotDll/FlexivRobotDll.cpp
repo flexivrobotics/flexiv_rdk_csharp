@@ -162,6 +162,24 @@ EXPORT_API flexiv::rdk::Robot* CreateFlexivRobot(const char* robot_sn, FlexivErr
 	return nullptr;
 }
 
+EXPORT_API flexiv::rdk::Robot* CreateFlexivRobotWithWhiteList(const char* robot_sn,
+	const char** interfaces, int interface_count, FlexivError* error) {
+	std::vector<std::string> white_list;
+	for (int i = 0; i < interface_count; ++i) {
+		white_list.push_back(interfaces[i]);
+	}
+	try {
+		flexiv::rdk::Robot* robot = new flexiv::rdk::Robot(robot_sn, white_list);
+		error->error_code = 0;
+		return robot;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
 EXPORT_API flexiv::rdk::Tool* CreateFlexivTool(flexiv::rdk::Robot* robot, FlexivError* error) {
 	try {
 		flexiv::rdk::Tool* tool = new flexiv::rdk::Tool(*robot);

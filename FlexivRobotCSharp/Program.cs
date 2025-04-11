@@ -9,7 +9,7 @@ namespace FlexivRobotCSharp
     {
         static void Main(string[] args)
         {
-            string robot_sn = "Rizon4s-062019";
+            string robot_sn = "Rizon4-VaEiyb";
             Utility.Log("Start example ...");
             while (true)
             {

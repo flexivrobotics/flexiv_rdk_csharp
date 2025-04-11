@@ -37,6 +37,11 @@ namespace FlexivRdk
         [DllImport(_flexiv_robot_dll, EntryPoint = "CreateFlexivRobot")]
         private static extern IntPtr CreateFlexivRobot(string robot_sn, ref FlexivError error);
 
+        [DllImport(_flexiv_robot_dll, EntryPoint = "CreateFlexivRobotWithWhiteList")]
+        private static extern IntPtr CreateFlexivRobotWithWhiteList(string robot_sn,
+            [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] interfaces,
+            int interface_count, ref FlexivError error);
+
         [DllImport(_flexiv_robot_dll)]
         private static extern IntPtr CreateFlexivTool(IntPtr robot, ref FlexivError error);
 
@@ -603,10 +608,19 @@ namespace FlexivRdk
         }
 
         // 创建机器人实例，并自动连接机器人，传入机器人序列号，如 Rizon4-123456。
-        public Robot(string robot_sn)
+        public Robot(string robot_sn, string[] network_interface_white_list = null)
         {
             FlexivError error = new FlexivError();
-            _flexiv_robot_ptr = CreateFlexivRobot(robot_sn, ref error);
+            if (network_interface_white_list == null)
+            {
+                _flexiv_robot_ptr = CreateFlexivRobot(robot_sn, ref error);
+            }
+            else
+            {
+                _flexiv_robot_ptr = CreateFlexivRobotWithWhiteList(robot_sn, network_interface_white_list,
+                    network_interface_white_list.Length, ref error);
+            }
+
             ThrowRdkException(error);
             _flexiv_tool_ptr = CreateFlexivTool(_flexiv_robot_ptr, ref error);
             ThrowRdkException(error);
