@@ -142,19 +142,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\flexiv_rdk\rdk_install_v1.5.1\lib;D:\flexiv_rdk\flexiv_rdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>flexiv_rdk.win_amd64.lib;
-
-foonathan_memory-0.7.1.lib;
-
-libfastcdr-1.0.lib;
-
-libfastrtps-2.6.lib;
-
-spdlog.lib;
-
-tinyxml2.lib;
-
-Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>flexiv_rdk.win_amd64.lib;foonathan_memory-0.7.1.lib;libfastcdr-1.0.lib;libfastrtps-2.6.lib;spdlog.lib;tinyxml2.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

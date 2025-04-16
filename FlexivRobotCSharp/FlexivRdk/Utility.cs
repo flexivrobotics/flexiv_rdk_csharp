@@ -9,7 +9,7 @@ namespace FlexivRdk
 {
     public class Utility
     {
-        private const string _flexiv_robot_dll = "flexiv_rdk_v150.dll";
+        private const string _flexiv_robot_dll = "flexiv_rdk_v151.dll";
 
         [DllImport(_flexiv_robot_dll)]
         private static extern void quat_2_euler_zyx(double qw, double qx, double qy, double qz,
