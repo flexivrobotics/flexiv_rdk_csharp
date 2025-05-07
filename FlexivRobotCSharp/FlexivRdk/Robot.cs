@@ -89,6 +89,18 @@ namespace FlexivRdk
         private static extern void run_auto_recovery(IntPtr robot, ref FlexivError error);
 
         [DllImport(_flexiv_robot_dll)]
+        private static extern int get_global_int_value(IntPtr robot, string key, ref bool flag, ref FlexivError error);
+
+        [DllImport(_flexiv_robot_dll)]
+        private static extern int get_global_double_value(IntPtr robot, string key, ref bool flag, ref FlexivError error);
+
+        [DllImport(_flexiv_robot_dll)]
+        private static extern void set_global_int_value(IntPtr robot, string key, int value, ref FlexivError error);
+
+        [DllImport(_flexiv_robot_dll)]
+        private static extern void set_global_double_value(IntPtr robot, string key, double value, ref FlexivError error);
+
+        [DllImport(_flexiv_robot_dll)]
         private static extern int get_current_mode(IntPtr robot);
 
         [DllImport(_flexiv_robot_dll)]
@@ -697,6 +709,44 @@ namespace FlexivRdk
         {
             FlexivError error = new FlexivError();
             run_auto_recovery(_flexiv_robot_ptr, ref error);
+            ThrowRdkException(error);
+        }
+
+        // 根据名称key获取int类型的全局变量
+        public int? GetGlobalIntValue(string key)
+        {
+            FlexivError error = new FlexivError();
+            bool flag = false;
+            int result = get_global_int_value(_flexiv_robot_ptr, key, ref flag, ref error);
+            ThrowRdkException(error);
+            if (flag) return null;
+            return result;
+        }
+
+        // 根据名称key获取double类型的全局变量
+        public double? GetGlobalDoubleValue(string key)
+        {
+            FlexivError error = new FlexivError();
+            bool flag = false;
+            double result = get_global_double_value(_flexiv_robot_ptr, key, ref flag, ref error);
+            ThrowRdkException(error);
+            if (flag) return null;
+            return result;
+        }
+
+        // 设置指定名称为key的int类型的全局变量
+        public void SetGlobalIntValue(string key, int value)
+        {
+            FlexivError error = new FlexivError();
+            set_global_int_value(_flexiv_robot_ptr, key, value, ref error);
+            ThrowRdkException(error);
+        }
+
+        // 设置指定名称为key的double类型的全局变量
+        public void SetGlobalDoubleValue(string key, double value)
+        {
+            FlexivError error = new FlexivError();
+            set_global_double_value(_flexiv_robot_ptr, key, value, ref error);
             ThrowRdkException(error);
         }
 

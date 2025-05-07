@@ -281,6 +281,78 @@ EXPORT_API void run_auto_recovery(flexiv::rdk::Robot* robot, FlexivError* error)
 	}
 }
 
+EXPORT_API int get_global_int_value(flexiv::rdk::Robot* robot, const char* key, bool& flag, FlexivError* error) {
+	try {
+		auto global_vari = robot->global_variables();
+		std::string chk_key(key);
+		int res = 0;
+		if (global_vari.find(chk_key) != global_vari.end()) {
+			flag = false;
+			res = std::get<int>(global_vari[chk_key]);
+		}
+		else {
+			flag = true;
+		}
+		error->error_code = 0;
+		return res;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return 0;
+	}
+}
+
+EXPORT_API int get_global_double_value(flexiv::rdk::Robot* robot, const char* key, bool& flag, FlexivError* error) {
+	try {
+		auto global_vari = robot->global_variables();
+		std::string chk_key(key);
+		double res = 0;
+		if (global_vari.find(chk_key) != global_vari.end()) {
+			flag = false;
+			res = std::get<double>(global_vari[chk_key]);
+		}
+		else {
+			flag = true;
+		}
+		error->error_code = 0;
+		return res;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return 0;
+	}
+}
+
+EXPORT_API void set_global_int_value(flexiv::rdk::Robot* robot, const char* key, int value, FlexivError* error) {
+	try {
+		std::string chk_key(key);
+		std::map<std::string, flexiv::rdk::FlexivDataTypes> vars;
+		vars[chk_key] = value;
+		robot->SetGlobalVariables(vars);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void set_global_double_value(flexiv::rdk::Robot* robot, const char* key, double value, FlexivError* error) {
+	try {
+		std::string chk_key(key);
+		std::map<std::string, flexiv::rdk::FlexivDataTypes> vars;
+		vars[chk_key] = value;
+		robot->SetGlobalVariables(vars);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 EXPORT_API int get_current_mode(flexiv::rdk::Robot* robot) {
 	flexiv::rdk::Mode mode = robot->mode();
 	using namespace flexiv::rdk;
@@ -686,7 +758,7 @@ EXPORT_API void	MoveL(flexiv::rdk::Robot* robot,
 		}
 		std::vector<double> config(configOptObj, configOptObj + config_len);
 		input_params["configOptObj"] = config;
-	}
+		}
 	try {
 		robot->ExecutePrimitive("MoveL", input_params, block_until_started);
 		error->error_code = 0;
@@ -695,7 +767,7 @@ EXPORT_API void	MoveL(flexiv::rdk::Robot* robot,
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
 	}
-}
+	}
 
 EXPORT_API void MoveJ(flexiv::rdk::Robot* robot,
 	W_Joint* target,
