@@ -303,7 +303,7 @@ EXPORT_API int get_global_int_value(flexiv::rdk::Robot* robot, const char* key, 
 	}
 }
 
-EXPORT_API int get_global_double_value(flexiv::rdk::Robot* robot, const char* key, bool& flag, FlexivError* error) {
+EXPORT_API double get_global_double_value(flexiv::rdk::Robot* robot, const char* key, bool& flag, FlexivError* error) {
 	try {
 		auto global_vari = robot->global_variables();
 		std::string chk_key(key);
@@ -758,7 +758,7 @@ EXPORT_API void	MoveL(flexiv::rdk::Robot* robot,
 		}
 		std::vector<double> config(configOptObj, configOptObj + config_len);
 		input_params["configOptObj"] = config;
-		}
+	}
 	try {
 		robot->ExecutePrimitive("MoveL", input_params, block_until_started);
 		error->error_code = 0;
@@ -767,7 +767,7 @@ EXPORT_API void	MoveL(flexiv::rdk::Robot* robot,
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
 	}
-	}
+}
 
 EXPORT_API void MoveJ(flexiv::rdk::Robot* robot,
 	W_Joint* target,

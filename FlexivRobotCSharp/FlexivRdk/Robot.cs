@@ -92,7 +92,7 @@ namespace FlexivRdk
         private static extern int get_global_int_value(IntPtr robot, string key, ref bool flag, ref FlexivError error);
 
         [DllImport(_flexiv_robot_dll)]
-        private static extern int get_global_double_value(IntPtr robot, string key, ref bool flag, ref FlexivError error);
+        private static extern double get_global_double_value(IntPtr robot, string key, ref bool flag, ref FlexivError error);
 
         [DllImport(_flexiv_robot_dll)]
         private static extern void set_global_int_value(IntPtr robot, string key, int value, ref FlexivError error);
