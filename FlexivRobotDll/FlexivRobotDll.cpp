@@ -319,7 +319,7 @@ EXPORT_API int get_global_int_value(flexiv::rdk::Robot* robot, const char* key, 
 	}
 }
 
-EXPORT_API int get_global_double_value(flexiv::rdk::Robot* robot, const char* key, bool& flag, FlexivError* error) {
+EXPORT_API double get_global_double_value(flexiv::rdk::Robot* robot, const char* key, bool& flag, FlexivError* error) {
 	try {
 		auto global_vari = robot->global_variables();
 		std::string chk_key(key);
