@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 #include <array>
+#include <thread>
 
 #include <comdef.h>
 #include <comutil.h>
@@ -203,7 +204,9 @@ EXPORT_API void DeleteFlexivWork(flexiv::rdk::WorkCoord* work) {
 }
 
 EXPORT_API bool fault(flexiv::rdk::Robot* robot) {
-	return robot->fault();
+	bool flag = robot->fault();
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	return flag;
 }
 
 EXPORT_API bool ClearFault(flexiv::rdk::Robot* robot, int timeout_sec, FlexivError* error) {
