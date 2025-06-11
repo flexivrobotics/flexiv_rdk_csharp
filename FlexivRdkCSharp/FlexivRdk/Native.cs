@@ -5,7 +5,7 @@ namespace FlexivRdkCSharp.FlexivRdk
 {
     internal static class NativeFlexivRdk
     {
-        private const string k_flexivRdkDll = "FlexivRdkV151.dll";
+        private const string k_flexivRdkDll = "flexiv_rdk.win64-vs2019.dll";
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void FreeString(IntPtr ptr);

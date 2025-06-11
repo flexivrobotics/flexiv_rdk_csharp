@@ -42,11 +42,14 @@ Optional arguments:
             string robotSN = args[0];
             try
             {
-                var robot = new Robot(robotSN);  // Instantiate robot interface
-                if (robot.IsFault())             // Clear fault on the connected robot if any
+                // Instantiate robot interface
+                var robot = new Robot(robotSN);
+                // Clear fault on the connected robot if any
+                if (robot.IsFault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
-                    if (!robot.ClearFault())     // Try to clear the fault
+                    // Try to clear the fault
+                    if (!robot.ClearFault())
                     {
                         Utility.SpdlogError("Fault cannot be cleared, exiting ...");
                         return;
@@ -54,8 +57,10 @@ Optional arguments:
                     Utility.SpdlogInfo("Fault on the connected robot is cleared");
                 }
                 Utility.SpdlogInfo("Enabling robot ...");
-                robot.Enable();                  // Enable the robot, make sure the E-stop is released before enabling
-                while (!robot.IsOperational())   // Wait for the robot to become operational
+                // Enable the robot, make sure the E-stop is released before enabling
+                robot.Enable();
+                // Wait for the robot to become operational
+                while (!robot.IsOperational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -79,10 +84,12 @@ Optional arguments:
                 Utility.SpdlogInfo("Initial positions set to: " + string.Join(", ", initPos.Select(v => v.ToString("F6"))));
                 // Robot joint degrees of freedom
                 int dof = robot.GetInfo().DoF;
+                // Initialize target vectors
                 double[] targetPos = (double[])initPos.Clone();
-                double[] targetVel = new double[dof];  // Initialize target vectors
+                double[] targetVel = new double[dof];
                 double[] targetAcc = new double[dof];
-                double[] maxVel = new double[dof];     // Joint motion constraints
+                // Joint motion constraints
+                double[] maxVel = new double[dof];
                 double[] maxAcc = new double[dof];
                 for (int i = 0; i < dof; ++i)
                 {
@@ -91,13 +98,16 @@ Optional arguments:
                     maxVel[i] = 2.0;
                     maxAcc[i] = 3.0;
                 }
-                const double SWING_AMP = 0.1;    // Joint sine-sweep amplitude [rad]
-                const double SWING_FREQ = 0.3;   // TCP sine-sweep frequency [Hz]
+                // Joint sine-sweep amplitude [rad]
+                const double SWING_AMP = 0.1;
+                // TCP sine-sweep frequency [Hz]
+                const double SWING_FREQ = 0.3;
                 int time = (int)(period * 1000);
                 // Send command periodically at user-specified frequency
                 while (true)
                 {
-                    Thread.Sleep(time);          // Use sleep to control loop period
+                    // Use sleep to control loop period
+                    Thread.Sleep(time);
                     if (robot.IsFault())
                     {
                         Utility.SpdlogError("Fault occurred on the connected robot, exiting ...");

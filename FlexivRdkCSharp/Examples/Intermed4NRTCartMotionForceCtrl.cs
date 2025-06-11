@@ -27,11 +27,16 @@ Optional arguments:
                           otherwise hold robot motion in non-force-control axes
 ";
         // Constants
-        const double SWING_AMP = 0.1;             // TCP sine-sweep amplitude [m]
-        const double SWING_FREQ = 0.3;            // TCP sine-sweep frequency [Hz]
-        const double PRESSING_FORCE = 5.0;        // Pressing force to apply during the unified motion-force control [N]
-        const double SEARCH_VELOCITY = 0.02;      // Cartesian linear velocity used to search for contact [m/s]
-        const double SEARCH_DISTANCE = 1.0;       // Cartesian linear velocity used to search for contact [m/s]
+        // TCP sine-sweep amplitude [m]
+        const double SWING_AMP = 0.1;
+        // TCP sine-sweep frequency [Hz]
+        const double SWING_FREQ = 0.3;
+        // Pressing force to apply during the unified motion-force control [N]
+        const double PRESSING_FORCE = 5.0;
+        // Cartesian linear velocity used to search for contact [m/s]
+        const double SEARCH_VELOCITY = 0.02;
+        // Maximum distance to travel when searching for contact [m]
+        const double SEARCH_DISTANCE = 1.0;
         // Maximum contact wrench during contact search for soft contact
         static readonly double[] MAX_WRENCH_FOR_CONTACT_SEARCH = { 10.0, 10.0, 10.0, 3.0, 3.0, 3.0 };
 
@@ -71,11 +76,14 @@ Optional arguments:
             string robotSN = args[0];
             try
             {
-                var robot = new Robot(robotSN);  // Instantiate robot interface
-                if (robot.IsFault())             // Clear fault on the connected robot if any
+                // Instantiate robot interface
+                var robot = new Robot(robotSN);
+                // Clear fault on the connected robot if any
+                if (robot.IsFault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
-                    if (!robot.ClearFault())     // Try to clear the fault
+                    // Try to clear the fault
+                    if (!robot.ClearFault())
                     {
                         Utility.SpdlogError("Fault cannot be cleared, exiting ...");
                         return;
@@ -83,8 +91,10 @@ Optional arguments:
                     Utility.SpdlogInfo("Fault on the connected robot is cleared");
                 }
                 Utility.SpdlogInfo("Enabling robot ...");
-                robot.Enable();                  // Enable the robot, make sure the E-stop is released before enabling
-                while (!robot.IsOperational())   // Wait for the robot to become operational
+                // Enable the robot, make sure the E-stop is released before enabling
+                robot.Enable();
+                // Wait for the robot to become operational
+                while (!robot.IsOperational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -106,7 +116,8 @@ Optional arguments:
                 // WARNING: during the process, the robot must not contact anything, otherwise the result
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
-                while (robot.IsBusy())           // Wait for primitive completion
+                // Wait for primitive completion
+                while (robot.IsBusy())
                 {
                     Thread.Sleep(1000);
                 }
@@ -182,13 +193,16 @@ Optional arguments:
                 // Send command periodically at user-specified frequency
                 while (true)
                 {
-                    Thread.Sleep(time);          // Use sleep to control loop period
-                    if (robot.IsFault())         // Monitor fault on the connected robot
+                    // Use sleep to control loop period
+                    Thread.Sleep(time);
+                    // Monitor fault on the connected robot
+                    if (robot.IsFault())
                     {
                         Utility.SpdlogError("Fault occurred on the connected robot, exiting ...");
                         return;
                     }
-                    targetPose = (double[])initPose.Clone();  // Initialize target pose to initial pose
+                    // Initialize target pose to initial pose
+                    targetPose = (double[])initPose.Clone();
                     // Set Fz according to reference frame to achieve a "pressing down" behavior
                     double Fz = 0.0;
                     if (forceCtrlFrame == CoordType.WORLD) Fz = PRESSING_FORCE;

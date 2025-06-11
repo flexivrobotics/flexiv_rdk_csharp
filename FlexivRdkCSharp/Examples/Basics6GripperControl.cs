@@ -47,11 +47,14 @@ Optional arguments:
             string robotSN = args[0];
             try
             {
-                var robot = new Robot(robotSN);  // Instantiate robot interface
-                if (robot.IsFault())             // Clear fault on the connected robot if any
+                // Instantiate robot interface
+                var robot = new Robot(robotSN);
+                // Clear fault on the connected robot if any
+                if (robot.IsFault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
-                    if (!robot.ClearFault())     // Try to clear the fault
+                    // Try to clear the fault
+                    if (!robot.ClearFault())
                     {
                         Utility.SpdlogError("Fault cannot be cleared, exiting ...");
                         return;
@@ -59,8 +62,10 @@ Optional arguments:
                     Utility.SpdlogInfo("Fault on the connected robot is cleared");
                 }
                 Utility.SpdlogInfo("Enabling robot ...");
-                robot.Enable();                  // Enable the robot, make sure the E-stop is released before enabling
-                while (!robot.IsOperational())   // Wait for the robot to become operational
+                // Enable the robot, make sure the E-stop is released before enabling
+                robot.Enable();
+                // Wait for the robot to become operational
+                while (!robot.IsOperational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -75,7 +80,8 @@ Optional arguments:
                 Utility.SpdlogInfo("Initialization complete");
                 Thread printThread = new Thread(() => PrintGripperStates(gripper));
                 printThread.Start();
-                while (!printThread.IsAlive)     // Loop until the printThread activates
+                // Loop until the printThread activates
+                while (!printThread.IsAlive)
                     ;
                 // Position control
                 Utility.SpdlogInfo("Closing gripper");
@@ -105,9 +111,11 @@ Optional arguments:
                 {
                     Utility.SpdlogInfo("Gripper running zero force control");
                     gripper.Grasp(0);
-                    Thread.Sleep(10000);  // Exit after 10 seconds
+                    // Exit after 10 seconds
+                    Thread.Sleep(10000);
                 }
-                gripper.Stop();           // Finished
+                // Finished
+                gripper.Stop();
                 Interlocked.Exchange(ref _stopFlag, 1);
                 Utility.SpdlogInfo("Stopping print thread");
                 printThread.Join();

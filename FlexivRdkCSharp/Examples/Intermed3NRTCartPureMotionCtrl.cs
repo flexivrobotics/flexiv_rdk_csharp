@@ -26,10 +26,14 @@ Optional arguments:
     --collision           Enable collision detection
 ";
         // Constants
-        const double SWING_AMP = 0.1;             // TCP sine-sweep amplitude [m]
-        const double SWING_FREQ = 0.3;            // TCP sine-sweep frequency [Hz]
-        const double EXT_FORCE_THRESHOLD = 10.0;  // External TCP force threshold for collision detection, value is only for demo purpose [N]
-        const double EXT_TORQUE_THRESHOLD = 5.0;  // External joint torque threshold for collision detection, value is only for demo purpose [Nm]
+        // TCP sine-sweep amplitude [m]
+        const double SWING_AMP = 0.1;
+        // TCP sine-sweep frequency [Hz]
+        const double SWING_FREQ = 0.3;
+        // External TCP force threshold for collision detection, value is only for demo purpose [N]
+        const double EXT_FORCE_THRESHOLD = 10.0;
+        // External joint torque threshold for collision detection, value is only for demo purpose [Nm]
+        const double EXT_TORQUE_THRESHOLD = 5.0;
 
         public void Run(string[] args)
         {
@@ -58,11 +62,14 @@ Optional arguments:
             string robotSN = args[0];
             try
             {
-                var robot = new Robot(robotSN);  // Instantiate robot interface
-                if (robot.IsFault())             // Clear fault on the connected robot if any
+                // Instantiate robot interface
+                var robot = new Robot(robotSN);
+                // Clear fault on the connected robot if any
+                if (robot.IsFault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
-                    if (!robot.ClearFault())     // Try to clear the fault
+                    // Try to clear the fault
+                    if (!robot.ClearFault())
                     {
                         Utility.SpdlogError("Fault cannot be cleared, exiting ...");
                         return;
@@ -70,8 +77,10 @@ Optional arguments:
                     Utility.SpdlogInfo("Fault on the connected robot is cleared");
                 }
                 Utility.SpdlogInfo("Enabling robot ...");
-                robot.Enable();                  // Enable the robot, make sure the E-stop is released before enabling
-                while (!robot.IsOperational())   // Wait for the robot to become operational
+                // Enable the robot, make sure the E-stop is released before enabling
+                robot.Enable();
+                // Wait for the robot to become operational
+                while (!robot.IsOperational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -92,7 +101,8 @@ Optional arguments:
                 // WARNING: during the process, the robot must not contact anything, otherwise the result
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
-                while (robot.IsBusy())           // Wait for primitive completion
+                // Wait for primitive completion
+                while (robot.IsBusy())
                 {
                     Thread.Sleep(1000);
                 }
@@ -111,8 +121,10 @@ Optional arguments:
                 // Send command periodically at user-specified frequency
                 while (true)
                 {
-                    Thread.Sleep(time);          // Use sleep to control loop period
-                    if (robot.IsFault())         // Monitor fault on the connected robot
+                    // Use sleep to control loop period
+                    Thread.Sleep(time);
+                    // Monitor fault on the connected robot
+                    if (robot.IsFault())
                     {
                         Utility.SpdlogError("Fault occurred on the connected robot, exiting ...");
                         return;
@@ -130,41 +142,48 @@ Optional arguments:
                     robot.SendCartesianMotionForce(targetPose);
                     // Do the following operations in sequence for every 20 seconds
                     double timeElapsed = loopCounter * period;
-                    if ((int)timeElapsed % 20 == 3)       // Online change reference joint positions at 3 seconds
+                    // Online change reference joint positions at 3 seconds
+                    if ((int)timeElapsed % 20 == 3)
                     {
                         var preferredJntPos = new double[] { 0.938, -1.108, -1.254, 1.464, 1.073, 0.278, -0.658 };
                         robot.SetNullSpacePosture(preferredJntPos);
                         Utility.SpdlogInfo("Reference joint positions set to: " + string.Join(", ", preferredJntPos.Select(v => v.ToString("F6"))));
                     }
-                    else if ((int)timeElapsed % 20 == 6)  // Online change stiffness to half of nominal at 6 seconds
+                    // Online change stiffness to half of nominal at 6 seconds
+                    else if ((int)timeElapsed % 20 == 6)
                     {
                         var newK = robot.GetInfo().KxNom.Select(k => k * 0.5).ToArray();
                         robot.SetCartesianImpedance(newK);
                         Utility.SpdlogInfo($"Cartesian stiffness set to: " + string.Join(", ", newK.Select(v => v.ToString("F6"))));
                     }
-                    else if ((int)timeElapsed % 20 == 9)  // Online change to another reference joint positions at 9 seconds
+                    // Online change to another reference joint positions at 9 seconds
+                    else if ((int)timeElapsed % 20 == 9)
                     {
                         var preferredJntPos = new double[] { -0.938, -1.108, 1.254, 1.464, -1.073, 0.278, 0.658 };
                         robot.SetNullSpacePosture(preferredJntPos);
                         Utility.SpdlogInfo("Reference joint positions set to: " + string.Join(", ", preferredJntPos.Select(v => v.ToString("F6"))));
                     }
-                    else if ((int)timeElapsed % 20 == 12) // Online reset impedance properties to nominal at 12 seconds
+                    // Online reset impedance properties to nominal at 12 seconds
+                    else if ((int)timeElapsed % 20 == 12)
                     {
                         robot.SetCartesianImpedance(robot.GetInfo().KxNom);
                         Utility.SpdlogInfo("Cartesian impedance properties are reset");
                     }
-                    else if ((int)timeElapsed % 20 == 14) // Online reset reference joint positions to nominal at 14 seconds
+                    // Online reset reference joint positions to nominal at 14 seconds
+                    else if ((int)timeElapsed % 20 == 14)
                     {
                         robot.SetNullSpacePosture(initQ);
                         Utility.SpdlogInfo("Reference joint positions are reset");
                     }
-                    else if ((int)timeElapsed % 20 == 16) // Online enable max contact wrench regulation at 16 seconds
+                    // Online enable max contact wrench regulation at 16 seconds
+                    else if ((int)timeElapsed % 20 == 16)
                     {
                         var maxWrench = new double[] { 10, 10, 10, 2, 2, 2 };
                         robot.SetMaxContactWrench(maxWrench);
                         Utility.SpdlogInfo("Max contact wrench set to " + string.Join(", ", maxWrench.Select(v => v.ToString("F6"))));
                     }
-                    else if ((int)timeElapsed % 20 == 19) // Disable max contact wrench regulation at 19 seconds
+                    // Disable max contact wrench regulation at 19 seconds
+                    else if ((int)timeElapsed % 20 == 19)
                     {
                         robot.SetMaxContactWrench(new double[] {
                             double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity,
@@ -194,7 +213,8 @@ Optional arguments:
                             return;
                         }
                     }
-                    loopCounter += 1;  // Increment loop counter
+                    // Increment loop counter
+                    loopCounter += 1;
                 }
             }
             catch (Exception ex)

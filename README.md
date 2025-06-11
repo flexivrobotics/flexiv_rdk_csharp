@@ -1,9 +1,42 @@
-﻿# flexiv_rdk_csharp
-## Project Introduction
-This project is a Windows 10 solution using Visual Studio 2019, which calls the C++ interfaces from [flexiv_rdk](https://github.com/flexivrobotics/flexiv_rdk) via P-Invoke and wraps them with some C# interfaces. The **FlexivRdkCSharp** folder contains a C# project, with the `Examples` folder housing example programs that utilize the interfaces from FlexivRdk. The **FlexivRdk** folder contains the C# wrappers for these interfaces, which call the functions from **FlexivRdkDll**. The `Program.cs` file is the test program, which uses examples from the `Examples` folder. The **FlexivRdkDll** folder is a C++ project that wraps the C++ interfaces from **flexiv_rdk** and generates a dynamic library from its static library. The **ReleaseDll** folder contains the precompiled dynamic libraries.
+﻿# Flexiv RDK CSharp
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+
+**Flexiv RDK CSharp** provides C# developers with an easy way to work with [**Flexiv RDK**](https://github.com/flexivrobotics/flexiv_rdk). It uses [**P/Invoke**](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/pinvoke) to call most of the functions from the RDK C++ interface, excluding *flexiv::rdk::Model* and *flexiv::rdk::Scheduler*.
+
+## Reference
+
+For detailed usage instructions and API documentation, refer to the [Flexiv RDK Home Page](https://www.flexiv.com/software/rdk).
+
+## Compatibility
+
+| **Language** | **Supported OS** | **Platform** | **Compiler / Runtime** | **Notes**                        |
+| ------------ | ---------------- | ------------ | ---------------------- | -------------------------------- |
+| **C++**      | Windows 10+      | x64          | MSVC v14.2+ (VS 2019+) | Builds dynamic library (`.dll`)  |
+| **C#**       | Windows 10+      | x64          | .NET 5.0 or later      | Uses `DllImport` to call C++ DLL |
+
+## Project Structure
+
+This project is a **Windows 10** solution developed using **Visual Studio 2019**. It calls the C++ interfaces from [flexiv_rdk](https://github.com/flexivrobotics/flexiv_rdk) via P/Invoke and wraps them with C# interfaces.
+
+- **FlexivRdkCSharp/**: C# project containing the wrapper and usage examples
+  - **FlexivRdk/**: C# wrapper classes calling functions from the native DLL
+  - **Examples/**: Example programs demonstrating usage of the C# wrappers
+  - `Program.cs`: Entry point, runs selected example programs
+- **FlexivRdkDll/**: C++ project wrapping **flexiv_rdk** C++ interfaces and generating a dynamic library (`.dll`)
+- **ReleaseDll/**: Precompiled dynamic libraries for immediate use
+
 ## Usage
-To use the current C# project, simply use the `.cs` files from the **FlexivRdkCSharp/FlexivRdk** folder and place the dynamic libraries from the **ReleaseDll** folder in the directory where the generated C# `.exe` file is located. The project has already set the output paths of **FlexivRdkCSharp** and **FlexivRdkDll** to the same folder, with **FlexivRdkCSharp** set as the startup project. Building **FlexivRdkDll** will generate the required dynamic libraries. In its project settings, you can replace the C/C++ additional include directories, linker additional library directories, and additional dependencies with your own local settings. Users can extend the interfaces as needed.
-## 项目介绍
-本项目是一个Windows10下Visual Studio 2019的解决方案，使用P-Invoke方式调用[flexiv_rdk](https://github.com/flexivrobotics/flexiv_rdk)中的C++接口，封装了一些C#接口。**FlexivRdkCSharp**文件夹是一个C#项目，其中Examples文件夹下是示例程序，使用FlexivRdk中的接口。FlexivRdk文件夹下是封装的C#接口，调用FlexivRdkDll中的接口。Program.cs是测试程序，使用Examples中的例程。**FlexivRdkDll**文件夹是一个C++项目，用于包装**flexiv_rdk**的C++接口，根据其静态库生成动态库。**ReleaseDll**文件夹下包含已经编译好的动态链接库。
-## 使用方法
-当前C#项目直接使用**FlexivRdkCSharp/FlexivRdk**文件夹下的.cs文件，将ReleaseDll下的动态链接库放到当前C#生成.exe文件的目录，即可运行。当前项目已将**FlexivRdkCSharp**和**FlexivRdkDll**输出路径设置为同一个文件夹，将**FlexivRdkCSharp**设为启动项目。对**FlexivRdkDll**生成会得到所需的动态链接库，在其项目属性中可以将C/C++附加包含目录，链接器中的附加库目录和附加依赖项中的配置项换成自己的本地设置。用户可以自行扩展所需要的接口。
+
+1. Use the `.cs` files from the **FlexivRdkCSharp/FlexivRdk/** folder in your project.
+2. Place the dynamic libraries from **ReleaseDll/** in the same directory as your generated C# `.exe` file.
+3. The **FlexivRdkCSharp** and **FlexivRdkDll** projects are pre-configured to output to the same directory, with **FlexivRdkCSharp** set as the startup project.
+4. Build **FlexivRdkDll** to generate the required DLLs.
+5. You may need to update the following in the **FlexivRdkDll** project settings according to your environment:
+   - **C/C++ → Additional Include Directories**
+   - **Linker → Additional Library Directories**
+   - **Linker → Additional Dependencies**
+6. Users can extend the C# interfaces as needed for additional functionality.
+
+## License
+
+This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).

@@ -31,11 +31,14 @@ Optional arguments:
             string robotSN = args[0];
             try
             {
-                var robot = new Robot(robotSN);  // Instantiate robot interface
-                if (robot.IsFault())             // Clear fault on the connected robot if any
+                // Instantiate robot interface
+                var robot = new Robot(robotSN);
+                // Clear fault on the connected robot if any
+                if (robot.IsFault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
-                    if (!robot.ClearFault())     // Try to clear the fault
+                    // Try to clear the fault
+                    if (!robot.ClearFault())
                     {
                         Utility.SpdlogError("Fault cannot be cleared, exiting ...");
                         return;

@@ -34,7 +34,8 @@ Optional arguments:
             string robotSN = args[0];
             try
             {
-                var robot = new Robot(robotSN);  // Instantiate robot interface
+                // Instantiate robot interface
+                var robot = new Robot(robotSN);
                 // Enable the robot, make sure the E-stop is released before enabling
                 Utility.SpdlogInfo("Enabling robot ...");
                 robot.Enable();
@@ -46,7 +47,8 @@ Optional arguments:
                 // to move back into allowed position range
                 if (robot.IsRecovery())
                     robot.RunAutoRecovery();
-                else  // Otherwise the system is normal, do nothing
+                // Otherwise the system is normal, do nothing
+                else
                     Utility.SpdlogInfo("Robot system is not in recovery state, nothing to be done, exiting ...");
             }
             catch (Exception ex)
