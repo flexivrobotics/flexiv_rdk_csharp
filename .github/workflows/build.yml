@@ -1,0 +1,42 @@
+name: Build on Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Set up MSBuild and CMake
+      uses: microsoft/setup-msbuild@v1.3
+
+    - name: Install MSYS2 (Git Bash)
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true  
+    
+    - name: Configure and build C++ wrapper (DLL)
+      shell: bash
+      run: |
+        ./build_and_install_flexiv_rdk_dll.sh
+
+    - name: Build C# example
+      run: |
+        cd csharp
+        dotnet build csharp.csproj -c Release
+    
+    - name: Run C# example
+      run: |
+        cd csharp
+        dotnet run --project csharp.csproj -c Release

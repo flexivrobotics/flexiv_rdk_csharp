@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+build*/
+third_party/flexiv_rdk
+install/cpp_wrapper
+install/rdk_install
+bin*/
+obj*/
