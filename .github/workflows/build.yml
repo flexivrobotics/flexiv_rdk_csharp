@@ -34,9 +34,9 @@ jobs:
     - name: Build C# example
       run: |
         cd csharp
-        dotnet build csharp.csproj -c Release
+        dotnet build build.csproj -c Release
     
     - name: Run C# example
       run: |
         cd csharp
-        dotnet run --project csharp.csproj -c Release
+        dotnet run --project build.csproj -c Release

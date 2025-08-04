@@ -42,17 +42,17 @@ If you simply want to run the C# examples using the provided native DLLs, follow
 
 2. Build the project in Release mode:
 
-        dotnet build -c Release
+        dotnet build csharp.csproj -c Release
 
    NOTE: During the build process, DLLs from the released_dll directory will be automatically copied to the output directory.
 
 3. Run the example program:
 
-        dotnet run
+        dotnet run --project csharp.csproj -c Release
 
    NOTE: Usage instructions will appear in the command line. Please select a sample program, such as:
 
-        dotnet run basic1_display_robot_states Rizon4-123456
+        dotnet run --project csharp.csproj basics1_display_robot_states Rizon4-123456
 
 4. If you want to use the interface in your own project:
     - Include the .cs files from the **csharp/FlexivRdk/** folder.
