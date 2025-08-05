@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- <NativeLibDir>..\install\cpp_wrapper\bin</NativeLibDir> -->
+    <NativeLibDir>..\released_dll</NativeLibDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(NativeLibDir)\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
