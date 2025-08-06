@@ -16,7 +16,7 @@ fi
 cd $SCRIPTPATH/flexiv_rdk
 # Use specific version
 git fetch -p
-git checkout v1.5.1
+git checkout v1.7
 # git submodule update --init --recursive
 # Build and install dependencies 
 cd thirdparty
