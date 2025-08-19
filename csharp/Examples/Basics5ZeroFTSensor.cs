@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 using System.Linq;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics5ZeroFTSensor : IExample
     {
@@ -66,7 +66,8 @@ Optional arguments:
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
                 // Wait for the primitive completion
-                while (robot.IsBusy())
+                while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),
+                    "terminated", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);
                 }

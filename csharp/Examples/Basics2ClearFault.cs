@@ -1,7 +1,7 @@
 ﻿using System;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics2ClearFault : IExample
     {

@@ -3,8 +3,20 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ToolParams
+    {
+        public double Mass;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] CoM;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+        public double[] Inertia;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
+        public double[] TcpLocation;
+    }
+
     public class Tool : IDisposable
     {
         private IntPtr _toolPtr;
@@ -133,6 +145,15 @@ namespace FlexivRdkCSharp.FlexivRdk
             FlexivError error = new();
             NativeFlexivRdk.RemoveTool(_toolPtr, toolName, ref error);
             ThrowRdkException(error);
+        }
+
+        public ToolParams CalibratePayloadParams(bool toolMounted)
+        {
+            FlexivError error = new();
+            ToolParams param = new();
+            NativeFlexivRdk.CalibratePayloadParams(_toolPtr, toolMounted ? 1 : 0, ref param, ref error);
+            ThrowRdkException(error);
+            return param;
         }
     }
 }

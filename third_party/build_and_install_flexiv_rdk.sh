@@ -23,7 +23,7 @@ cd thirdparty
 bash build_and_install_dependencies.sh $INSTALL_DIR/rdk_install
 cd ..
 # Configure CMake
-cmake -B build -DCMAKE_PREFIX_PATH=$INSTALL_DIR/rdk_install
+cmake -S . -B build -DCMAKE_PREFIX_PATH=$INSTALL_DIR/rdk_install
 # Build and install
 cmake --build build --target install --config release -j $NUM_JOBS
 echo ">>> Installed components: flexiv rdk"

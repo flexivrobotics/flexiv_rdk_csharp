@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Intermed2NRTJntImpCtrl : IExample
     {

@@ -1,8 +1,31 @@
 ﻿using System;
 using System.Text.Json;
+using System.Runtime.InteropServices;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GripperParams
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+        public string Name;
+        public double MinWidth;
+        public double MaxWidth;
+        public double MinVel;
+        public double MaxVel;
+        public double MinForce;
+        public double MaxForce;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GripperStates
+    {
+        public double Width;
+        public double Force;
+        // 0 = false = not moving, 1 = true = moving.
+        public int IsMoving;
+    }
+
     public class Gripper : IDisposable
     {
         private IntPtr _gripperPtr;
@@ -56,6 +79,20 @@ namespace FlexivRdkCSharp.FlexivRdk
 
         ~Gripper() => Dispose(false);
 
+        public void Enable(string gripperName)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.EnableGripper(_gripperPtr, gripperName, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void Disable()
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.DisableGripper(_gripperPtr, ref error);
+            ThrowRdkException(error);
+        }
+
         public void Init()
         {
             FlexivError error = new();
@@ -70,7 +107,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void Move(double width, double velocity, double forceLimit = 0)
+        public void Move(double width, double velocity, double forceLimit)
         {
             FlexivError error = new();
             NativeFlexivRdk.Move(_gripperPtr, width, velocity, forceLimit, ref error);
@@ -82,9 +119,11 @@ namespace FlexivRdkCSharp.FlexivRdk
             NativeFlexivRdk.StopGripper(_gripperPtr);
         }
 
-        public bool IsMoving()
+        public GripperParams GetGripperParams()
         {
-            return NativeFlexivRdk.GripperIsMoving(_gripperPtr) != 0;
+            GripperParams gripperParams = new();
+            NativeFlexivRdk.GetGripperParams(_gripperPtr, ref gripperParams);
+            return gripperParams;
         }
 
         public GripperStates GetGripperStates()

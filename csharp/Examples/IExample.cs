@@ -1,4 +1,4 @@
-﻿namespace FlexivRdkCSharp.Examples
+﻿namespace Examples
 {
     public interface IExample
     {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics3PrimitiveExecution : IExample
     {
@@ -77,8 +77,6 @@ Optional arguments:
                         new JPos(10, -30, 10, 30, 10, 15, 10, -15, 10),
                         new JPos(20, -60, -10, 60, -10, 30, 20, -30, 20)
                     } },
-                }, new Dictionary<string, FlexivData> {
-                    {"lockExternalAxes", 0 }
                 });
                 // Wait for reached target
                 while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),

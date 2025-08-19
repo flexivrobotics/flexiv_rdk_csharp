@@ -17,13 +17,13 @@ EXPORT_API void SpdlogError(const char* msgs) {
 }
 
 EXPORT_API Robot* CreateFlexivRobot(const char* robot_sn,
-	const char** interfaces, int interface_count, FlexivError* error) {
+	const char** interfaces, int interface_count, int verbose, FlexivError* error) {
 	std::vector<std::string> white_list;
 	for (int i = 0; i < interface_count; ++i) {
 		white_list.push_back(interfaces[i]);
 	}
 	try {
-		flexiv::rdk::Robot* robot = new flexiv::rdk::Robot(robot_sn, white_list);
+		flexiv::rdk::Robot* robot = new flexiv::rdk::Robot(robot_sn, white_list, verbose);
 		error->error_code = 0;
 		return robot;
 	}
@@ -75,7 +75,8 @@ EXPORT_API int GetMode(Robot* robot) {
 	case Mode::NRT_PRIMITIVE_EXECUTION:    return 8;
 	case Mode::RT_CARTESIAN_MOTION_FORCE:  return 9;
 	case Mode::NRT_CARTESIAN_MOTION_FORCE: return 10;
-	case Mode::MODES_CNT:                  return 11;
+	case Mode::NRT_SUPER_PRIMITIVE:        return 11;
+	case Mode::MODES_CNT:                  return 12;
 	default:                               return 0;
 	}
 }
@@ -92,15 +93,8 @@ EXPORT_API void GetStates(Robot* robot, WRobotState* robot_state) {
 		robot_state->tau_dot[i] = states.tau_dot[i];
 		robot_state->tau_ext[i] = states.tau_ext[i];
 	}
-	size_t count = std::min(states.q_e.size(), kMaxExtAxes);
-	std::copy_n(states.q_e.begin(), count, robot_state->q_e);
-	count = std::min(states.dq_e.size(), kMaxExtAxes);
-	std::copy_n(states.dq_e.begin(), count, robot_state->dq_e);
-	count = std::min(states.tau_e.size(), kMaxExtAxes);
-	std::copy_n(states.tau_e.begin(), count, robot_state->tau_e);
 	for (int i = 0; i < kPoseSize; ++i) {
 		robot_state->tcp_pose[i] = states.tcp_pose[i];
-		robot_state->tcp_pose_des[i] = states.tcp_pose_des[i];
 		robot_state->flange_pose[i] = states.flange_pose[i];
 	}
 	for (int i = 0; i < kCartDoF; ++i) {
@@ -117,8 +111,8 @@ EXPORT_API int IsStopped(Robot* robot) {
 	return robot->stopped();
 }
 
-EXPORT_API int IsOperational(Robot* robot, int verbose) {
-	return robot->operational(verbose);
+EXPORT_API int IsOperational(Robot* robot) {
+	return robot->operational();
 }
 
 EXPORT_API int GetOperationalStatus(Robot* robot) {
@@ -163,12 +157,10 @@ EXPORT_API int IsEnablingButtonReleased(Robot* robot) {
 	return robot->enabling_button_pressed();
 }
 
-EXPORT_API char* GetMuLog(Robot* robot) {
-	const auto& mu = robot->mu_log();
-	std::map<std::string, FlexivDataTypes> tmp;
-	tmp["mu_log"] = mu;
-	std::string json_str = serializeParams(tmp);
-	return CopyInputString(json_str.c_str());
+EXPORT_API char* GetEventLog(Robot* robot) {
+	nlohmann::json j = robot->event_log();
+	std::string str = j.dump();
+	return CopyInputString(str.c_str());
 }
 
 //======================================= SYSTEM CONTROL =======================================
@@ -195,11 +187,11 @@ EXPORT_API void Brake(Robot* robot, int engage, FlexivError* error) {
 }
 
 EXPORT_API void SwitchMode(Robot* robot, int mode, FlexivError* error) {
-	static const std::array<flexiv::rdk::Mode, 12> modeMap = {
+	static const std::array<flexiv::rdk::Mode, 13> modeMap = {
 	Mode::UNKNOWN, Mode::IDLE, Mode::RT_JOINT_TORQUE, Mode::RT_JOINT_IMPEDANCE,
 	Mode::NRT_JOINT_IMPEDANCE, Mode::RT_JOINT_POSITION, Mode::NRT_JOINT_POSITION,
 	Mode::NRT_PLAN_EXECUTION, Mode::NRT_PRIMITIVE_EXECUTION, Mode::RT_CARTESIAN_MOTION_FORCE,
-	Mode::NRT_CARTESIAN_MOTION_FORCE, Mode::MODES_CNT };
+	Mode::NRT_CARTESIAN_MOTION_FORCE, Mode::NRT_SUPER_PRIMITIVE, Mode::MODES_CNT };
 	if (mode < 0 || mode >= static_cast<int>(modeMap.size())) {
 		error->error_code = 1;
 		CopyExceptionMsg(std::runtime_error("Invalid robot mode index"), error);
@@ -268,12 +260,24 @@ EXPORT_API char* GetGlobalVariables(Robot* robot, FlexivError* error) {
 	try {
 		const auto& globalVars = robot->global_variables();
 		std::string json_str = serializeParams(globalVars);
+		error->error_code = 0;
 		return CopyInputString(json_str.c_str());
 	}
 	catch (const std::exception& e) {
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
 		return nullptr;
+	}
+}
+
+EXPORT_API void LockExternalAxes(Robot* robot, int toggle, FlexivError* error) {
+	try {
+		robot->LockExternalAxes(toggle);
+		error->error_code = 0;
+	} 
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
 	}
 }
 
@@ -374,13 +378,11 @@ EXPORT_API void StepBreakpoint(Robot* robot, FlexivError* error) {
 EXPORT_API void ExecutePrimitive(Robot* robot,
 	const char* primitiveName,
 	const char* inputParams,
-	const char* properties,
 	int blockUntilStarted,
 	FlexivError* error) {
 	try {
 		auto input_params = parseJsonToParams(inputParams);
-		auto props = parseJsonToParams(properties);
-		robot->ExecutePrimitive(std::string(primitiveName), input_params, props, blockUntilStarted);
+		robot->ExecutePrimitive(std::string(primitiveName), input_params, blockUntilStarted);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -393,6 +395,7 @@ EXPORT_API char* GetPrimitiveStates(Robot* robot, FlexivError* error) {
 	try {
 		const auto& primitiveStates = robot->primitive_states();
 		std::string json_str = serializeParams(primitiveStates);
+		error->error_code = 0;
 		return CopyInputString(json_str.c_str());
 	}
 	catch (const std::exception& e) {
@@ -639,9 +642,9 @@ EXPORT_API void SetPassiveForceControl(Robot* robot, int IsEnabled, FlexivError*
 EXPORT_API void SetDigitalOutput(Robot* robot, int idx, int value, FlexivError* error) {
 	try {
 		unsigned int port = idx;
-		std::vector<unsigned int> port_idx{ port };
-		std::vector<bool> values{ value == 1 };
-		robot->SetDigitalOutputs(port_idx, values);
+		std::map<unsigned int, bool> outputs;
+		outputs[idx] = value;
+		robot->SetDigitalOutputs(outputs);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -801,6 +804,21 @@ EXPORT_API void RemoveTool(Tool* tool, const char* name, FlexivError* error) {
 	}
 }
 
+EXPORT_API void CalibratePayloadParams(Tool* tool, int toolMounted, WToolParams* toolParams, FlexivError* error) {
+	try {
+		const auto& params = tool->CalibratePayloadParams(toolMounted);
+		error->error_code = 0;
+		toolParams->Mass = params.mass;
+		for (int i = 0; i < 3; ++i) toolParams->CoM[i] = params.CoM[i];
+		for (int i = 0; i < 6; ++i) toolParams->Intertia[i] = params.inertia[i];
+		for (int i = 0; i < kPoseSize; ++i) toolParams->TcpLocation[i] = params.tcp_location[i];
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 //======================================= WORK COORD =========================================
 EXPORT_API WorkCoord* CreateWorkCoord(Robot* robot, FlexivError* error) {
 	try {
@@ -928,6 +946,28 @@ EXPORT_API void DeleteGripper(Gripper* gripper) {
 	delete gripper;
 }
 
+EXPORT_API void EnableGripper(Gripper* gripper, const char* name, FlexivError* error) {
+	try {
+		gripper->Enable(name);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void DisableGripper(Gripper* gripper, FlexivError* error) {
+	try {
+		gripper->Disable();
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 EXPORT_API void Init(Gripper* gripper, FlexivError* error) {
 	try {
 		gripper->Init();
@@ -965,15 +1005,22 @@ EXPORT_API void StopGripper(Gripper* gripper) {
 	gripper->Stop();
 }
 
-EXPORT_API int GripperIsMoving(Gripper* gripper) {
-	return gripper->moving();
+EXPORT_API void GetGripperParams(Gripper* gripper, WGripperParams* param) {
+	const auto& gp = gripper->params();
+	CopyMsgSrc2Dst(gp.name.c_str(), param->name, sizeof(param->name));
+	param->min_width = gp.min_width;
+	param->max_width = gp.max_width;
+	param->min_vel = gp.min_vel;
+	param->max_vel = gp.max_vel;
+	param->min_force = gp.min_force;
+	param->max_force = gp.max_force;
 }
 
 EXPORT_API void GetGripperStates(Gripper* gripper, WGripperStates* states) {
 	const auto& st = gripper->states();
 	states->width = st.width;
 	states->force = st.force;
-	states->max_width = st.max_width;
+	states->is_moving = st.is_moving;
 }
 
 //======================================== FILE IO ===========================================
@@ -994,9 +1041,47 @@ EXPORT_API void DeleteFileIO(FileIO* fileIO) {
 	delete fileIO;
 }
 
+EXPORT_API char* GetTrajFilesList(FileIO* fileIO, FlexivError* error) {
+	try {
+		json j = fileIO->traj_files_list();
+		std::string str = j.dump();
+		error->error_code = 0;
+		return CopyInputString(str.c_str());
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
 EXPORT_API void UploadTrajFile(FileIO* fileIO, const char* fileDir, const char* fileName, FlexivError* error) {
 	try {
 		fileIO->UploadTrajFile(fileDir, fileName);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API char* DownloadTrajFile(FileIO* fileIO, const char* fileName, FlexivError* error) {
+	try {
+		std::string str = fileIO->DownloadTrajFile(fileName);
+		error->error_code = 0;
+		return CopyInputString(str.c_str());
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
+EXPORT_API void DownloadTrajFile2(FileIO* fileIO, const char* fileName, const char* saveDir, FlexivError* error) {
+	try {
+		fileIO->DownloadTrajFile(fileName, saveDir);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1049,6 +1134,26 @@ EXPORT_API int HasDevice(Device* device, const char* name, FlexivError* error) {
 	}
 }
 
+EXPORT_API char* GetDeviceParams(Device* device, const char* name, FlexivError* error) {
+	try {
+		const auto& deviceParams = device->params(name);
+		std::map<std::string, FlexivDataTypes> ret;
+		for (const auto& [key, value] : deviceParams) {
+			std::visit([&](auto&& arg) {
+				ret[key] = arg;
+			}, value);
+		}
+		std::string json_str = serializeParams(ret);
+		error->error_code = 0;
+		return CopyInputString(json_str.c_str());
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return nullptr;
+	}
+}
+
 EXPORT_API void EnableDevice(Device* device, const char* name, FlexivError* error) {
 	try {
 		device->Enable(name);
@@ -1074,10 +1179,13 @@ EXPORT_API void DisableDevice(Device* device, const char* name, FlexivError* err
 EXPORT_API void SendCommands(Device* device, const char* name, const char* cmds, FlexivError* error) {
 	try {
 		json json_obj = json::parse(cmds);
-		std::map<std::string, std::variant<int, double>> device_cmds;
+		std::map<std::string, std::variant<bool, int, double>> device_cmds;
 		for (auto& [key, value] : json_obj.items()) {
 			if (value.is_number_integer()) {
 				device_cmds[key] = value.get<int>();
+			}
+			else if (value.is_boolean()) {
+				device_cmds[key] = value.get<bool>();
 			}
 			else if (value.is_number_float()) {
 				device_cmds[key] = value.get<double>();
@@ -1085,6 +1193,273 @@ EXPORT_API void SendCommands(Device* device, const char* name, const char* cmds,
 		}
 		device->Command(name, device_cmds);
 		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+//======================================= MAINTENANCE ========================================
+EXPORT_API Maintenance* CreateMaintenance(Robot* robot, FlexivError* error) {
+	try {
+		Maintenance* maintenancePtr = new Maintenance(*robot);
+		error->error_code = 0;
+		return maintenancePtr;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
+EXPORT_API void DeleteMaintenance(Maintenance* maintenancePtr) {
+	delete maintenancePtr;
+}
+
+EXPORT_API void CalibrateJointTorqueSensors(Maintenance* maintenancePtr, const double* posture, int postureLen, FlexivError* error) {
+	try {
+		std::vector<double> cali_posture(posture, posture + postureLen);
+		maintenancePtr->CalibrateJointTorqueSensors(cali_posture);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+//========================================= SAFETY ============================================
+EXPORT_API Safety* CreateSafety(Robot* robot, const char* password, FlexivError* error) {
+	try {
+		Safety* safetyPtr = new Safety(*robot, std::string(password));
+		error->error_code = 0;
+		return safetyPtr;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
+EXPORT_API void DeleteSafety(Safety* safetyPtr) {
+	delete safetyPtr;
+}
+
+EXPORT_API void DefaultLimits(Safety* safetyPtr, WSafetyLimits* limits) {
+	const auto& val = safetyPtr->default_limits();
+	for (int i = 0; i < kSerialJointDoF; ++i) {
+		limits->q_min[i] = val.q_min[i];
+		limits->q_max[i] = val.q_max[i];
+		limits->dq_max_normal[i] = val.dq_max_normal[i];
+		limits->dq_max_reduced[i] = val.dq_max_reduced[i];
+	}
+}
+
+EXPORT_API void CurrentLimits(Safety* safetyPtr, WSafetyLimits* limits) {
+	const auto& val = safetyPtr->current_limits();
+	for (int i = 0; i < kSerialJointDoF; ++i) {
+		limits->q_min[i] = val.q_min[i];
+		limits->q_max[i] = val.q_max[i];
+		limits->dq_max_normal[i] = val.dq_max_normal[i];
+		limits->dq_max_reduced[i] = val.dq_max_reduced[i];
+	}
+}
+
+EXPORT_API void GetSafetyInputs(Safety* safetyPtr, int* temp) {
+	const auto& val = safetyPtr->safety_inputs();
+	for (int i = 0; i < kSafetyIOPorts; ++i) {
+		temp[i] = val[i];
+	}
+}
+
+EXPORT_API void SetJointPositionLimits(Safety* safetyPtr, double* minPositions,
+	int minLen, double* maxPositions, int maxLen, FlexivError* error) {
+	try {
+		std::vector<double> minPoses(minPositions, minPositions + minLen);
+		std::vector<double> maxPoses(maxPositions, maxPositions + maxLen);
+		safetyPtr->SetJointPositionLimits(minPoses, maxPoses);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void SetJointVelocityNormalLimits(Safety* safetyPtr, double* maxVel,
+	int len, FlexivError* error) {
+	try {
+		std::vector<double> maxVel(maxVel, maxVel + len);
+		safetyPtr->SetJointVelocityNormalLimits(maxVel);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void SetJointVelocityReducedLimits(Safety* safetyPtr, double* maxVel,
+	int len, FlexivError* error) {
+	try {
+		std::vector<double> maxVel(maxVel, maxVel + len);
+		safetyPtr->SetJointVelocityReducedLimits(maxVel);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+//========================================= MODEL ===========================================
+EXPORT_API Model* CreateModel(Robot* robot, double gravityX, double gravityY, 
+	double gravityZ, FlexivError* error) {
+	try {
+		Model* model = new Model(*robot, Eigen::Vector3d(gravityX, gravityY, gravityZ));
+		error->error_code = 0;
+		return model;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
+EXPORT_API void DeleteModel(Model* model) {
+	delete model;
+}
+
+EXPORT_API void Reload(Model* model, FlexivError* error) {
+	try {
+		model->Reload();
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void Update(Model* model, double* pos, int posLen, double* vel, int velLen, FlexivError* error) {
+	try {
+		std::vector<double> positions(pos, pos + posLen);
+		std::vector<double> velocities(vel, vel + velLen);
+		model->Update(positions, velocities);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void GetJacobian(Model* model, const char* linkName, double* buffer, int rows, int cols, FlexivError* error) {
+	try {
+		if (!model || !buffer || !linkName) return;
+		Eigen::MatrixXd J = model->J(std::string(linkName));
+		if (J.rows() != rows || J.cols() != cols) return;
+		std::memcpy(buffer, J.data(), sizeof(double) * rows * rows);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void GetJacobianDot(Model* model, const char* linkName, double* buffer, int rows, int cols, FlexivError* error) {
+	try {
+		if (!model || !buffer || !linkName) return;
+		Eigen::MatrixXd dJ = model->dJ(std::string(linkName));
+		if (dJ.rows() != rows || dJ.cols() != cols) return;
+		std::memcpy(buffer, dJ.data(), sizeof(double) * rows * rows);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void GetMassMatrix(Model* model, double* buffer, int dof, FlexivError* error) {
+	try {
+		if (!model || !buffer) return;
+		Eigen::MatrixXd mass = model->M();
+		if (mass.rows() != dof || mass.cols() != dof) return;
+		std::memcpy(buffer, mass.data(), sizeof(double) * dof * dof);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void GetCoriolisCentripetalMatrix(Model* model, double* buffer, int dof, FlexivError* error) {
+	try {
+		if (!model || !buffer) return;
+		Eigen::MatrixXd coriolis = model->C();
+		if (coriolis.rows() != dof || coriolis.cols() != dof) return;
+		std::memcpy(buffer, coriolis.data(), sizeof(double) * dof * dof);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void GetGravityForceVector(Model* model, double* buffer, int dof) {
+	auto g = model->g();
+	if (g.size() != dof) return;
+	std::memcpy(buffer, g.data(), sizeof(double) * dof);
+}
+
+EXPORT_API void GetCoriolisForceVector(Model* model, double* buffer, int dof) {
+	auto c = model->c();
+	if (c.size() != dof) return;
+	std::memcpy(buffer, c.data(), sizeof(double) * dof);
+}
+
+EXPORT_API void SyncURDF(Model* model, char* path, FlexivError* error) {
+	try {
+		model->SyncURDF(std::string(path));
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void Reachable(Model* model, double* pose, int poseLen, double* seed, int seedLen,
+	int freeOri, int* reachable, double* ikSolution, FlexivError* error) {
+	try {
+		std::array<double, kPoseSize> poseArr;
+		for (int i = 0; i < kPoseSize; ++i) poseArr[i] = pose[i];
+		std::vector<double> seedVec(seed, seed + seedLen);
+		auto result = model->reachable(poseArr, seedVec, freeOri != 0);
+		*reachable = result.first ? 1 : 0;
+		for (int i = 0; i < kPoseSize; ++i)
+			ikSolution[i] = result.second[i];
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void ConfigurationScore(Model* model, double* tScore, double* oScore, FlexivError* error) {
+	try {
+		auto score = model->configuration_score();
+		*tScore = score.first;
+		*oScore = score.second;
 	}
 	catch (const std::exception& e) {
 		error->error_code = 1;

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics7AutoRecovery : IExample
     {

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     public class Intermed4NRTCartMotionForceCtrl : IExample
     {
@@ -104,7 +104,8 @@ Optional arguments:
                 robot.SwitchMode(RobotMode.NRT_PLAN_EXECUTION);
                 robot.ExecutePlan("PLAN-Home");
                 // Wait for the plan to finish
-                while (robot.IsBusy())
+                while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),
+                    "terminated", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);
                 }

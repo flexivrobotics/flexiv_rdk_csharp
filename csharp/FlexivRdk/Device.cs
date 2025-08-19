@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public class Device : IDisposable
     {
@@ -77,14 +77,28 @@ namespace FlexivRdkCSharp.FlexivRdk
             return flag != 0;
         }
 
-        public void EnableDevice(string deviceName)
+        // Uses partial types: Int, Double, String, VectorDouble, and VectorString from FlexivDataType.
+        // Represents the DeviceParamDataTypes defined in the C++ API.
+        public Dictionary<string, FlexivData> GetDeviceParams(string deviceName)
+        {
+            FlexivError error = new();
+            IntPtr ptr = NativeFlexivRdk.GetDeviceParams(_devicePtr, deviceName, ref error);
+            ThrowRdkException(error);
+            string str = Marshal.PtrToStringAnsi(ptr);
+            NativeFlexivRdk.FreeString(ptr);
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
+            if (tmp == null) tmp = new Dictionary<string, FlexivData>();
+            return new Dictionary<string, FlexivData>(tmp);
+        }
+
+        public void Enable(string deviceName)
         {
             FlexivError error = new();
             NativeFlexivRdk.EnableDevice(_devicePtr, deviceName, ref error);
             ThrowRdkException(error);
         }
 
-        public void DisableDevice(string deviceName)
+        public void Disable(string deviceName)
         {
             FlexivError error = new();
             NativeFlexivRdk.DisableDevice(_devicePtr, deviceName, ref error);

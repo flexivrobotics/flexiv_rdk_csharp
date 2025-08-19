@@ -368,3 +368,4 @@ install/cpp_wrapper
 install/rdk_install
 bin*/
 obj*/
+.vscode/

@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public static class FlexivConstants
     {
@@ -15,6 +15,55 @@ namespace FlexivRdkCSharp.FlexivRdk
         public const int kPoseSize = 7;
         public const int kIOPorts = 18;
         public const int kMaxExtAxes = 6;
+        public const int kSafetyIOPorts = 8;
+    }
+
+    public enum Level : int
+    {
+        UNKNOWN = 0,
+        INFO = 1,
+        WARNING = 2,
+        ERROR = 3,
+        CRITICAL = 4
+    }
+
+    public struct RobotEvent
+    {
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Level Level { get; set; }
+        public int Id { get; set; }
+        public string Description { get; set; }
+        public string Consequences { get; set; }
+        public string ProbableCauses { get; set; }
+        public string RecommendedActions { get; set; }
+        public long Timestamp { get; set; }
+
+        public DateTime GetDateTime()
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(Timestamp).UtcDateTime;
+        }
+    }
+
+    public enum OperationalStatus : int
+    {
+        UNKNOWN = 0,
+        READY = 1,
+        BOOTING = 2,
+        ESTOP_NOT_RELEASED = 3,
+        NOT_ENABLED = 4,
+        RELEASING_BRAKE = 5,
+        MINOR_FAULT = 6,
+        CRITICAL_FAULT = 7,
+        IN_REDUCED_STATE = 8,
+        IN_RECOVERY_STATE = 9,
+        IN_MANUAL_MODE = 10,
+        IN_AUTO_MODE = 11
+    }
+
+    public enum CoordType : int
+    {
+        WORLD = 0,
+        TCP = 1,
     }
 
     public enum FlexivDataType
@@ -193,13 +242,14 @@ namespace FlexivRdkCSharp.FlexivRdk
         public double[] Orientation { get; set; } = new double[FlexivConstants.kCartDoF / 2];
         [JsonPropertyName("ref_frame")]
         public string[] RefFrame { get; set; } = new string[2] { "WORLD", "WORLD_ORIGIN" };
-        [JsonPropertyName("ref_q")]
-        public double[] RefQ { get; set; } = new double[FlexivConstants.kSerialJointDoF];
+        // This is ref_q_m in cpp api
+        [JsonPropertyName("ref_q_m")]
+        public double[] RefQM { get; set; } = new double[FlexivConstants.kSerialJointDoF];
         [JsonPropertyName("ref_q_e")]
         public double[] RefQE { get; set; } = new double[FlexivConstants.kMaxExtAxes];
         public Coord() { }
         public Coord(double[] position, double[] orientation, string[] refFrame,
-                     double[] refQ = null, double[] refQE = null)
+                     double[] refQM = null, double[] refQE = null)
         {
             if (position != null && position.Length != FlexivConstants.kCartDoF / 2)
                 throw new ArgumentException($"Position must have length {FlexivConstants.kCartDoF / 2}", nameof(position));
@@ -207,36 +257,36 @@ namespace FlexivRdkCSharp.FlexivRdk
                 throw new ArgumentException($"Orientation must have length {FlexivConstants.kCartDoF / 2}", nameof(orientation));
             if (refFrame != null && refFrame.Length != 2)
                 throw new ArgumentException("RefFrame must have length 2", nameof(refFrame));
-            if (refQ != null && refQ.Length != FlexivConstants.kSerialJointDoF)
-                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQ));
+            if (refQM != null && refQM.Length != FlexivConstants.kSerialJointDoF)
+                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQM));
             if (refQE != null && refQE.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"RefQE must have length {FlexivConstants.kMaxExtAxes}", nameof(refQE));
             Position = position ?? new double[FlexivConstants.kCartDoF / 2];
             Orientation = orientation ?? new double[FlexivConstants.kCartDoF / 2];
             RefFrame = refFrame ?? new string[2] { "WORLD", "WORLD_ORIGIN" };
-            RefQ = refQ ?? new double[FlexivConstants.kSerialJointDoF];
+            RefQM = refQM ?? new double[FlexivConstants.kSerialJointDoF];
             RefQE = refQE ?? new double[FlexivConstants.kMaxExtAxes];
         }
         public Coord(double x, double y, double z, double rx, double ry, double rz,
                      string coordType = "WORLD", string coordName = "WORLD_ORIGIN",
-                     double[] refQ = null, double[] refQE = null)
+                     double[] refQM = null, double[] refQE = null)
         {
-            if (refQ != null && refQ.Length != FlexivConstants.kSerialJointDoF)
-                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQ));
+            if (refQM != null && refQM.Length != FlexivConstants.kSerialJointDoF)
+                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQM));
             if (refQE != null && refQE.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"RefQE must have length {FlexivConstants.kMaxExtAxes}", nameof(refQE));
             Position = new double[] { x, y, z };
             Orientation = new double[] { rx, ry, rz };
             RefFrame = new string[] { coordType, coordName };
-            RefQ = refQ ?? new double[FlexivConstants.kSerialJointDoF];
+            RefQM = refQM ?? new double[FlexivConstants.kSerialJointDoF];
             RefQE = refQE ?? new double[FlexivConstants.kMaxExtAxes];
         }
         public Coord(double x, double y, double z, double qw, double qx, double qy, double qz,
              string coordType = "WORLD", string coordName = "WORLD_ORIGIN",
-             double[] refQ = null, double[] refQE = null)
+             double[] refQM = null, double[] refQE = null)
         {
-            if (refQ != null && refQ.Length != FlexivConstants.kSerialJointDoF)
-                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQ));
+            if (refQM != null && refQM.Length != FlexivConstants.kSerialJointDoF)
+                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQM));
             if (refQE != null && refQE.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"RefQE must have length {FlexivConstants.kMaxExtAxes}", nameof(refQE));
             Position = new double[] { x, y, z };
@@ -244,7 +294,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             Utility.Quat2EulerZYX(qw, qx, qy, qz, ref yaw, ref pitch, ref roll);
             Orientation = new double[] { Utility.Rad2Deg(roll), Utility.Rad2Deg(pitch), Utility.Rad2Deg(yaw) };
             RefFrame = new string[] { coordType, coordName };
-            RefQ = refQ ?? new double[FlexivConstants.kSerialJointDoF];
+            RefQM = refQM ?? new double[FlexivConstants.kSerialJointDoF];
             RefQE = refQE ?? new double[FlexivConstants.kMaxExtAxes];
         }
 
@@ -262,33 +312,32 @@ namespace FlexivRdkCSharp.FlexivRdk
             }
             string pos = FormatArray(Position);
             string ori = FormatArray(Orientation);
-            string refQ = FormatArray(RefQ);
+            string refQ = FormatArray(RefQM);
             string refQE = FormatArray(RefQE);
             return $"Coord {{ Position: [{pos}], Orientation: [{ori}], RefFrame: \"{RefFrame}\", RefQ: [{refQ}], RefQE: [{refQE}] }}";
         }
-
     }
 
     public class JPos
     {
-        [JsonPropertyName("q")]
-        public double[] Q { get; set; } = new double[FlexivConstants.kSerialJointDoF];
+        [JsonPropertyName("q_m")]
+        public double[] QM { get; set; } = new double[FlexivConstants.kSerialJointDoF];
         [JsonPropertyName("q_e")]
         public double[] QE { get; set; } = new double[FlexivConstants.kMaxExtAxes];
         public JPos() { }
-        public JPos(double[] q, double[] q_e = null)
+        public JPos(double[] q_m, double[] q_e = null)
         {
-            if (q != null && q.Length != FlexivConstants.kSerialJointDoF)
+            if (q_m != null && q_m.Length != FlexivConstants.kSerialJointDoF)
                 throw new ArgumentException($"Q must have {FlexivConstants.kSerialJointDoF} elements.");
             if (q_e != null && q_e.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"Qe must have at most {FlexivConstants.kMaxExtAxes} elements.");
-            Q = q ?? new double[FlexivConstants.kSerialJointDoF];
+            QM = q_m ?? new double[FlexivConstants.kSerialJointDoF];
             QE = q_e ?? new double[FlexivConstants.kMaxExtAxes];
         }
         public JPos(double j1, double j2, double j3, double j4, double j5, double j6, double j7,
                     double e1 = 0, double e2 = 0, double e3 = 0, double e4 = 0, double e5 = 0, double e6 = 0)
         {
-            Q = new double[] { j1, j2, j3, j4, j5, j6, j7 };
+            QM = new double[] { j1, j2, j3, j4, j5, j6, j7 };
             QE = new double[] { e1, e2, e3, e4, e5, e6 };
         }
         public static JPos FromJson(string json)
@@ -303,7 +352,7 @@ namespace FlexivRdkCSharp.FlexivRdk
                 string formatStr = $"F{decimals}";
                 return string.Join(", ", arr.Select(v => v.ToString(formatStr)));
             }
-            var qStr = FormatArray(Q);
+            var qStr = FormatArray(QM);
             var qeStr = FormatArray(QE);
             return $"JPos {{ Q: [{qStr}], QE: [{qeStr}] }}";
         }
@@ -330,33 +379,12 @@ namespace FlexivRdkCSharp.FlexivRdk
         NRT_PRIMITIVE_EXECUTION = 8,
         RT_CARTESIAN_MOTION_FORCE = 9,
         NRT_CARTESIAN_MOTION_FORCE = 10,
-        MODES_CNT = 11
-    }
-
-    public enum OperationalStatus : int
-    {
-        UNKNOWN = 0,
-        READY = 1,
-        BOOTING = 2,
-        ESTOP_NOT_RELEASED = 3,
-        NOT_ENABLED = 4,
-        RELEASING_BRAKE = 5,
-        MINOR_FAULT = 6,
-        CRITICAL_FAULT = 7,
-        IN_REDUCED_STATE = 8,
-        IN_RECOVERY_STATE = 9,
-        IN_MANUAL_MODE = 10,
-        IN_AUTO_MODE = 11
-    }
-
-    public enum CoordType : int
-    {
-        WORLD = 0,
-        TCP = 1,
+        NRT_SUPER_PRIMITIVE = 11,
+        MODES_CNT = 12
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct RobotState
+    public struct RobotStates
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] Q;
@@ -374,16 +402,8 @@ namespace FlexivRdkCSharp.FlexivRdk
         public double[] TauDot;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] TauExt;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxExtAxes)]
-        public double[] QE;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxExtAxes)]
-        public double[] DQE;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxExtAxes)]
-        public double[] TauE;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
         public double[] TcpPose;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
-        public double[] TcpPoseDes;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kCartDoF)]
         public double[] TcpVel;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
@@ -421,11 +441,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             AppendArray(nameof(TauDes), TauDes);
             AppendArray(nameof(TauDot), TauDot);
             AppendArray(nameof(TauExt), TauExt);
-            AppendArray(nameof(QE), QE);
-            AppendArray(nameof(DQE), DQE);
-            AppendArray(nameof(TauE), TauE);
             AppendArray(nameof(TcpPose), TcpPose);
-            AppendArray(nameof(TcpPoseDes), TcpPoseDes);
             AppendArray(nameof(TcpVel), TcpVel);
             AppendArray(nameof(FlangePose), FlangePose);
             AppendArray(nameof(FtSensorRaw), FtSensorRaw);
@@ -516,25 +532,5 @@ namespace FlexivRdkCSharp.FlexivRdk
             sb.AppendLine($"TauMax: {FormatArray(TauMax)}");
             return sb.ToString();
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ToolParams
-    {
-        public double Mass;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-        public double[] CoM;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
-        public double[] Inertia;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
-        public double[] TcpLocation;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GripperStates
-    {
-        public double Width;
-        public double Force;
-        public double MaxWidth;
     }
 }
