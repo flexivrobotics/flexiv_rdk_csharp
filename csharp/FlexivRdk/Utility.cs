@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public class Utility
     {
@@ -55,7 +55,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             NativeFlexivRdk.SpdlogWarn(msgs);
         }
 
-        public static string FlexivDataDictToString(Dictionary<string, FlexivData> dict)
+        public static string FlexivDataTypesDictToString(Dictionary<string, FlexivDataTypes> dict)
         {
             if (dict == null || dict.Count == 0)
                 return "{}";

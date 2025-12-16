@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public static class FlexivConstants
     {
@@ -15,28 +15,77 @@ namespace FlexivRdkCSharp.FlexivRdk
         public const int kPoseSize = 7;
         public const int kIOPorts = 18;
         public const int kMaxExtAxes = 6;
+        public const int kSafetyIOPorts = 8;
     }
 
-    public enum FlexivDataType
+    public enum Level : int
+    {
+        UNKNOWN = 0,
+        INFO = 1,
+        WARNING = 2,
+        ERROR = 3,
+        CRITICAL = 4
+    }
+
+    public struct RobotEvent
+    {
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public Level Level { get; set; }
+        public int Id { get; set; }
+        public string Description { get; set; }
+        public string Consequences { get; set; }
+        public string ProbableCauses { get; set; }
+        public string RecommendedActions { get; set; }
+        public long Timestamp { get; set; }
+
+        public DateTime GetDateTime()
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(Timestamp).UtcDateTime;
+        }
+    }
+
+    public enum OperationalStatus : int
+    {
+        UNKNOWN = 0,
+        READY = 1,
+        BOOTING = 2,
+        ESTOP_NOT_RELEASED = 3,
+        NOT_ENABLED = 4,
+        RELEASING_BRAKE = 5,
+        MINOR_FAULT = 6,
+        CRITICAL_FAULT = 7,
+        IN_REDUCED_STATE = 8,
+        IN_RECOVERY_STATE = 9,
+        IN_MANUAL_MODE = 10,
+        IN_AUTO_MODE = 11
+    }
+
+    public enum CoordType : int
+    {
+        WORLD = 0,
+        TCP = 1,
+    }
+
+    public enum DataType
     {
         Int, Double, String, JPos, Coord, VectorInt, VectorDouble,
         VectorString, VectorJPos, VectorCoord
     }
 
-    public class FlexivData
+    public class FlexivDataTypes
     {
-        public FlexivDataType Type { get; set; }
+        public DataType Type { get; set; }
         public object Value { get; set; }
-        public FlexivData() { }
-        public FlexivData(FlexivDataType type, object value)
+        public FlexivDataTypes() { }
+        public FlexivDataTypes(DataType type, object value)
         {
             Type = type;
             Value = value;
         }
-        public static FlexivData Create<T>(T value) where T : notnull
+        public static FlexivDataTypes Create<T>(T value) where T : notnull
         {
             var type = MapType(typeof(T));
-            return new FlexivData(type, value);
+            return new FlexivDataTypes(type, value);
         }
         public T As<T>()
         {
@@ -44,66 +93,66 @@ namespace FlexivRdkCSharp.FlexivRdk
                 return typedValue;
             throw new InvalidCastException($"Cannot convert {Type} to {typeof(T).Name}");
         }
-        private static readonly Dictionary<Type, FlexivDataType> TypeMap = new()
+        private static readonly Dictionary<Type, DataType> TypeMap = new()
         {
-            { typeof(int), FlexivDataType.Int },
-            { typeof(double), FlexivDataType.Double },
-            { typeof(string), FlexivDataType.String },
-            { typeof(JPos), FlexivDataType.JPos },
-            { typeof(Coord), FlexivDataType.Coord },
-            { typeof(List<int>), FlexivDataType.VectorInt },
-            { typeof(List<double>), FlexivDataType.VectorDouble },
-            { typeof(List<string>), FlexivDataType.VectorString },
-            { typeof(List<JPos>), FlexivDataType.VectorJPos },
-            { typeof(List<Coord>), FlexivDataType.VectorCoord }
+            { typeof(int), DataType.Int },
+            { typeof(double), DataType.Double },
+            { typeof(string), DataType.String },
+            { typeof(JPos), DataType.JPos },
+            { typeof(Coord), DataType.Coord },
+            { typeof(List<int>), DataType.VectorInt },
+            { typeof(List<double>), DataType.VectorDouble },
+            { typeof(List<string>), DataType.VectorString },
+            { typeof(List<JPos>), DataType.VectorJPos },
+            { typeof(List<Coord>), DataType.VectorCoord }
         };
-        private static FlexivDataType MapType(Type t)
+        private static DataType MapType(Type t)
         {
             if (TypeMap.TryGetValue(t, out var result))
                 return result;
             throw new NotSupportedException($"Unsupported type: {t.FullName}");
         }
 
-        public static implicit operator FlexivData(int value) => Create(value);
-        public static implicit operator FlexivData(double value) => Create(value);
-        public static implicit operator FlexivData(string value) => Create(value);
-        public static implicit operator FlexivData(JPos value) => Create(value);
-        public static implicit operator FlexivData(Coord value) => Create(value);
-        public static implicit operator FlexivData(List<int> value) => Create(value);
-        public static implicit operator FlexivData(List<double> value) => Create(value);
-        public static implicit operator FlexivData(List<string> value) => Create(value);
-        public static implicit operator FlexivData(List<JPos> value) => Create(value);
-        public static implicit operator FlexivData(List<Coord> value) => Create(value);
+        public static implicit operator FlexivDataTypes(int value) => Create(value);
+        public static implicit operator FlexivDataTypes(double value) => Create(value);
+        public static implicit operator FlexivDataTypes(string value) => Create(value);
+        public static implicit operator FlexivDataTypes(JPos value) => Create(value);
+        public static implicit operator FlexivDataTypes(Coord value) => Create(value);
+        public static implicit operator FlexivDataTypes(List<int> value) => Create(value);
+        public static implicit operator FlexivDataTypes(List<double> value) => Create(value);
+        public static implicit operator FlexivDataTypes(List<string> value) => Create(value);
+        public static implicit operator FlexivDataTypes(List<JPos> value) => Create(value);
+        public static implicit operator FlexivDataTypes(List<Coord> value) => Create(value);
 
-        public static explicit operator int(FlexivData d) => d.As<int>();
-        public static explicit operator double(FlexivData d) => d.As<double>();
-        public static explicit operator string(FlexivData d) => d.As<string>();
-        public static explicit operator JPos(FlexivData d) => d.As<JPos>();
-        public static explicit operator Coord(FlexivData d) => d.As<Coord>();
-        public static explicit operator List<int>(FlexivData d) => d.As<List<int>>();
-        public static explicit operator List<double>(FlexivData d) => d.As<List<double>>();
-        public static explicit operator List<string>(FlexivData d) => d.As<List<string>>();
-        public static explicit operator List<JPos>(FlexivData d) => d.As<List<JPos>>();
-        public static explicit operator List<Coord>(FlexivData d) => d.As<List<Coord>>();
+        public static explicit operator int(FlexivDataTypes d) => d.As<int>();
+        public static explicit operator double(FlexivDataTypes d) => d.As<double>();
+        public static explicit operator string(FlexivDataTypes d) => d.As<string>();
+        public static explicit operator JPos(FlexivDataTypes d) => d.As<JPos>();
+        public static explicit operator Coord(FlexivDataTypes d) => d.As<Coord>();
+        public static explicit operator List<int>(FlexivDataTypes d) => d.As<List<int>>();
+        public static explicit operator List<double>(FlexivDataTypes d) => d.As<List<double>>();
+        public static explicit operator List<string>(FlexivDataTypes d) => d.As<List<string>>();
+        public static explicit operator List<JPos>(FlexivDataTypes d) => d.As<List<JPos>>();
+        public static explicit operator List<Coord>(FlexivDataTypes d) => d.As<List<Coord>>();
 
         public override string ToString()
         {
             string valueStr;
             switch (Type)
             {
-                case FlexivDataType.VectorInt:
+                case DataType.VectorInt:
                     valueStr = string.Join(", ", As<List<int>>());
                     break;
-                case FlexivDataType.VectorDouble:
+                case DataType.VectorDouble:
                     valueStr = string.Join(", ", As<List<double>>().Select(v => v.ToString("F3")));
                     break;
-                case FlexivDataType.VectorString:
+                case DataType.VectorString:
                     valueStr = string.Join(", ", As<List<string>>());
                     break;
-                case FlexivDataType.VectorJPos:
+                case DataType.VectorJPos:
                     valueStr = string.Join("\n  ", As<List<JPos>>());
                     break;
-                case FlexivDataType.VectorCoord:
+                case DataType.VectorCoord:
                     valueStr = string.Join("\n  ", As<List<Coord>>());
                     break;
                 default:
@@ -115,9 +164,9 @@ namespace FlexivRdkCSharp.FlexivRdk
 
     }
 
-    public static class FlexivDataUtils
+    public static class FlexivDataTypesUtils
     {
-        public static T Get<T>(Dictionary<string, FlexivData> dict, string key)
+        public static T Get<T>(Dictionary<string, FlexivDataTypes> dict, string key)
         {
             if (!dict.TryGetValue(key, out var data))
                 throw new KeyNotFoundException($"Parameter '{key}' is missing.");
@@ -131,7 +180,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             }
         }
 
-        public static bool TryGet<T>(Dictionary<string, FlexivData> dict, string key, out T result)
+        public static bool TryGet<T>(Dictionary<string, FlexivDataTypes> dict, string key, out T result)
         {
             if (dict.TryGetValue(key, out var data))
             {
@@ -148,34 +197,34 @@ namespace FlexivRdkCSharp.FlexivRdk
         }
     }
 
-    public class FlexivDataJsonConverter : JsonConverter<FlexivData>
+    public class FlexivDataTypesJsonConverter : JsonConverter<FlexivDataTypes>
     {
-        public override FlexivData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override FlexivDataTypes Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             using var doc = JsonDocument.ParseValue(ref reader);
             var root = doc.RootElement;
             var typeStr = root.GetProperty("type").GetString();
-            if (!Enum.TryParse<FlexivDataType>(typeStr, out var type))
-                throw new JsonException($"Unknown FlexivDataType: {typeStr}");
+            if (!Enum.TryParse<DataType>(typeStr, out var type))
+                throw new JsonException($"Unknown DataType: {typeStr}");
             var valueElem = root.GetProperty("value");
             object value = type switch
             {
-                FlexivDataType.Int => valueElem.GetInt32(),
-                FlexivDataType.Double => valueElem.GetDouble(),
-                FlexivDataType.String => valueElem.GetString()!,
-                FlexivDataType.JPos => JsonSerializer.Deserialize<JPos>(valueElem.GetRawText(), options)!,
-                FlexivDataType.Coord => JsonSerializer.Deserialize<Coord>(valueElem.GetRawText(), options)!,
-                FlexivDataType.VectorInt => JsonSerializer.Deserialize<List<int>>(valueElem.GetRawText(), options)!,
-                FlexivDataType.VectorDouble => JsonSerializer.Deserialize<List<double>>(valueElem.GetRawText(), options)!,
-                FlexivDataType.VectorString => JsonSerializer.Deserialize<List<string>>(valueElem.GetRawText(), options)!,
-                FlexivDataType.VectorJPos => JsonSerializer.Deserialize<List<JPos>>(valueElem.GetRawText(), options)!,
-                FlexivDataType.VectorCoord => JsonSerializer.Deserialize<List<Coord>>(valueElem.GetRawText(), options)!,
+                DataType.Int => valueElem.GetInt32(),
+                DataType.Double => valueElem.GetDouble(),
+                DataType.String => valueElem.GetString()!,
+                DataType.JPos => JsonSerializer.Deserialize<JPos>(valueElem.GetRawText(), options)!,
+                DataType.Coord => JsonSerializer.Deserialize<Coord>(valueElem.GetRawText(), options)!,
+                DataType.VectorInt => JsonSerializer.Deserialize<List<int>>(valueElem.GetRawText(), options)!,
+                DataType.VectorDouble => JsonSerializer.Deserialize<List<double>>(valueElem.GetRawText(), options)!,
+                DataType.VectorString => JsonSerializer.Deserialize<List<string>>(valueElem.GetRawText(), options)!,
+                DataType.VectorJPos => JsonSerializer.Deserialize<List<JPos>>(valueElem.GetRawText(), options)!,
+                DataType.VectorCoord => JsonSerializer.Deserialize<List<Coord>>(valueElem.GetRawText(), options)!,
                 _ => throw new JsonException($"Unsupported type: {type}")
             };
-            return new FlexivData(type, value);
+            return new FlexivDataTypes(type, value);
         }
 
-        public override void Write(Utf8JsonWriter writer, FlexivData value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, FlexivDataTypes value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             writer.WriteString("type", value.Type.ToString());
@@ -193,13 +242,14 @@ namespace FlexivRdkCSharp.FlexivRdk
         public double[] Orientation { get; set; } = new double[FlexivConstants.kCartDoF / 2];
         [JsonPropertyName("ref_frame")]
         public string[] RefFrame { get; set; } = new string[2] { "WORLD", "WORLD_ORIGIN" };
-        [JsonPropertyName("ref_q")]
-        public double[] RefQ { get; set; } = new double[FlexivConstants.kSerialJointDoF];
+        // This is ref_q_m in cpp api
+        [JsonPropertyName("ref_q_m")]
+        public double[] RefQM { get; set; } = new double[FlexivConstants.kSerialJointDoF];
         [JsonPropertyName("ref_q_e")]
         public double[] RefQE { get; set; } = new double[FlexivConstants.kMaxExtAxes];
         public Coord() { }
         public Coord(double[] position, double[] orientation, string[] refFrame,
-                     double[] refQ = null, double[] refQE = null)
+                     double[] refQM = null, double[] refQE = null)
         {
             if (position != null && position.Length != FlexivConstants.kCartDoF / 2)
                 throw new ArgumentException($"Position must have length {FlexivConstants.kCartDoF / 2}", nameof(position));
@@ -207,36 +257,36 @@ namespace FlexivRdkCSharp.FlexivRdk
                 throw new ArgumentException($"Orientation must have length {FlexivConstants.kCartDoF / 2}", nameof(orientation));
             if (refFrame != null && refFrame.Length != 2)
                 throw new ArgumentException("RefFrame must have length 2", nameof(refFrame));
-            if (refQ != null && refQ.Length != FlexivConstants.kSerialJointDoF)
-                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQ));
+            if (refQM != null && refQM.Length != FlexivConstants.kSerialJointDoF)
+                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQM));
             if (refQE != null && refQE.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"RefQE must have length {FlexivConstants.kMaxExtAxes}", nameof(refQE));
             Position = position ?? new double[FlexivConstants.kCartDoF / 2];
             Orientation = orientation ?? new double[FlexivConstants.kCartDoF / 2];
             RefFrame = refFrame ?? new string[2] { "WORLD", "WORLD_ORIGIN" };
-            RefQ = refQ ?? new double[FlexivConstants.kSerialJointDoF];
+            RefQM = refQM ?? new double[FlexivConstants.kSerialJointDoF];
             RefQE = refQE ?? new double[FlexivConstants.kMaxExtAxes];
         }
         public Coord(double x, double y, double z, double rx, double ry, double rz,
                      string coordType = "WORLD", string coordName = "WORLD_ORIGIN",
-                     double[] refQ = null, double[] refQE = null)
+                     double[] refQM = null, double[] refQE = null)
         {
-            if (refQ != null && refQ.Length != FlexivConstants.kSerialJointDoF)
-                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQ));
+            if (refQM != null && refQM.Length != FlexivConstants.kSerialJointDoF)
+                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQM));
             if (refQE != null && refQE.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"RefQE must have length {FlexivConstants.kMaxExtAxes}", nameof(refQE));
             Position = new double[] { x, y, z };
             Orientation = new double[] { rx, ry, rz };
             RefFrame = new string[] { coordType, coordName };
-            RefQ = refQ ?? new double[FlexivConstants.kSerialJointDoF];
+            RefQM = refQM ?? new double[FlexivConstants.kSerialJointDoF];
             RefQE = refQE ?? new double[FlexivConstants.kMaxExtAxes];
         }
         public Coord(double x, double y, double z, double qw, double qx, double qy, double qz,
              string coordType = "WORLD", string coordName = "WORLD_ORIGIN",
-             double[] refQ = null, double[] refQE = null)
+             double[] refQM = null, double[] refQE = null)
         {
-            if (refQ != null && refQ.Length != FlexivConstants.kSerialJointDoF)
-                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQ));
+            if (refQM != null && refQM.Length != FlexivConstants.kSerialJointDoF)
+                throw new ArgumentException($"RefQ must have length {FlexivConstants.kSerialJointDoF}", nameof(refQM));
             if (refQE != null && refQE.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"RefQE must have length {FlexivConstants.kMaxExtAxes}", nameof(refQE));
             Position = new double[] { x, y, z };
@@ -244,7 +294,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             Utility.Quat2EulerZYX(qw, qx, qy, qz, ref yaw, ref pitch, ref roll);
             Orientation = new double[] { Utility.Rad2Deg(roll), Utility.Rad2Deg(pitch), Utility.Rad2Deg(yaw) };
             RefFrame = new string[] { coordType, coordName };
-            RefQ = refQ ?? new double[FlexivConstants.kSerialJointDoF];
+            RefQM = refQM ?? new double[FlexivConstants.kSerialJointDoF];
             RefQE = refQE ?? new double[FlexivConstants.kMaxExtAxes];
         }
 
@@ -262,33 +312,32 @@ namespace FlexivRdkCSharp.FlexivRdk
             }
             string pos = FormatArray(Position);
             string ori = FormatArray(Orientation);
-            string refQ = FormatArray(RefQ);
+            string refQ = FormatArray(RefQM);
             string refQE = FormatArray(RefQE);
             return $"Coord {{ Position: [{pos}], Orientation: [{ori}], RefFrame: \"{RefFrame}\", RefQ: [{refQ}], RefQE: [{refQE}] }}";
         }
-
     }
 
     public class JPos
     {
-        [JsonPropertyName("q")]
-        public double[] Q { get; set; } = new double[FlexivConstants.kSerialJointDoF];
+        [JsonPropertyName("q_m")]
+        public double[] QM { get; set; } = new double[FlexivConstants.kSerialJointDoF];
         [JsonPropertyName("q_e")]
         public double[] QE { get; set; } = new double[FlexivConstants.kMaxExtAxes];
         public JPos() { }
-        public JPos(double[] q, double[] q_e = null)
+        public JPos(double[] q_m, double[] q_e = null)
         {
-            if (q != null && q.Length != FlexivConstants.kSerialJointDoF)
+            if (q_m != null && q_m.Length != FlexivConstants.kSerialJointDoF)
                 throw new ArgumentException($"Q must have {FlexivConstants.kSerialJointDoF} elements.");
             if (q_e != null && q_e.Length != FlexivConstants.kMaxExtAxes)
                 throw new ArgumentException($"Qe must have at most {FlexivConstants.kMaxExtAxes} elements.");
-            Q = q ?? new double[FlexivConstants.kSerialJointDoF];
+            QM = q_m ?? new double[FlexivConstants.kSerialJointDoF];
             QE = q_e ?? new double[FlexivConstants.kMaxExtAxes];
         }
         public JPos(double j1, double j2, double j3, double j4, double j5, double j6, double j7,
                     double e1 = 0, double e2 = 0, double e3 = 0, double e4 = 0, double e5 = 0, double e6 = 0)
         {
-            Q = new double[] { j1, j2, j3, j4, j5, j6, j7 };
+            QM = new double[] { j1, j2, j3, j4, j5, j6, j7 };
             QE = new double[] { e1, e2, e3, e4, e5, e6 };
         }
         public static JPos FromJson(string json)
@@ -303,7 +352,7 @@ namespace FlexivRdkCSharp.FlexivRdk
                 string formatStr = $"F{decimals}";
                 return string.Join(", ", arr.Select(v => v.ToString(formatStr)));
             }
-            var qStr = FormatArray(Q);
+            var qStr = FormatArray(QM);
             var qeStr = FormatArray(QE);
             return $"JPos {{ Q: [{qStr}], QE: [{qeStr}] }}";
         }
@@ -330,33 +379,12 @@ namespace FlexivRdkCSharp.FlexivRdk
         NRT_PRIMITIVE_EXECUTION = 8,
         RT_CARTESIAN_MOTION_FORCE = 9,
         NRT_CARTESIAN_MOTION_FORCE = 10,
-        MODES_CNT = 11
-    }
-
-    public enum OperationalStatus : int
-    {
-        UNKNOWN = 0,
-        READY = 1,
-        BOOTING = 2,
-        ESTOP_NOT_RELEASED = 3,
-        NOT_ENABLED = 4,
-        RELEASING_BRAKE = 5,
-        MINOR_FAULT = 6,
-        CRITICAL_FAULT = 7,
-        IN_REDUCED_STATE = 8,
-        IN_RECOVERY_STATE = 9,
-        IN_MANUAL_MODE = 10,
-        IN_AUTO_MODE = 11
-    }
-
-    public enum CoordType : int
-    {
-        WORLD = 0,
-        TCP = 1,
+        NRT_SUPER_PRIMITIVE = 11,
+        MODES_CNT = 12
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct RobotState
+    public struct RobotStates
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] Q;
@@ -374,16 +402,8 @@ namespace FlexivRdkCSharp.FlexivRdk
         public double[] TauDot;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] TauExt;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxExtAxes)]
-        public double[] QE;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxExtAxes)]
-        public double[] DQE;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxExtAxes)]
-        public double[] TauE;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
         public double[] TcpPose;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
-        public double[] TcpPoseDes;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kCartDoF)]
         public double[] TcpVel;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
@@ -421,11 +441,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             AppendArray(nameof(TauDes), TauDes);
             AppendArray(nameof(TauDot), TauDot);
             AppendArray(nameof(TauExt), TauExt);
-            AppendArray(nameof(QE), QE);
-            AppendArray(nameof(DQE), DQE);
-            AppendArray(nameof(TauE), TauE);
             AppendArray(nameof(TcpPose), TcpPose);
-            AppendArray(nameof(TcpPoseDes), TcpPoseDes);
             AppendArray(nameof(TcpVel), TcpVel);
             AppendArray(nameof(FlangePose), FlangePose);
             AppendArray(nameof(FtSensorRaw), FtSensorRaw);
@@ -516,25 +532,5 @@ namespace FlexivRdkCSharp.FlexivRdk
             sb.AppendLine($"TauMax: {FormatArray(TauMax)}");
             return sb.ToString();
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct ToolParams
-    {
-        public double Mass;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-        public double[] CoM;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
-        public double[] Inertia;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
-        public double[] TcpLocation;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GripperStates
-    {
-        public double Width;
-        public double Force;
-        public double MaxWidth;
     }
 }

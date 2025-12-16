@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics3PrimitiveExecution : IExample
     {
@@ -37,7 +37,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -52,7 +52,7 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -61,36 +61,34 @@ Optional arguments:
                 robot.SwitchMode(RobotMode.NRT_PRIMITIVE_EXECUTION);
                 // (1) Go to home pose
                 Utility.SpdlogInfo("Executing primitive: Home");
-                robot.ExecutePrimitive("Home", new Dictionary<string, FlexivData>());
+                robot.ExecutePrimitive("Home", new Dictionary<string, FlexivDataTypes>());
                 // Wait for reached target
-                while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
                     "reachedTarget", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);
                 }
                 // (2) Move robot joints to target positions
                 Utility.SpdlogInfo("Executing primitive: MoveJ");
-                robot.ExecutePrimitive("MoveJ", new Dictionary<string, FlexivData> {
+                robot.ExecutePrimitive("MoveJ", new Dictionary<string, FlexivDataTypes> {
                     // unit: deg
                     {"target", new JPos(30, -45, 0, 90, 0, 40, 30, -50, 30) },
                     {"waypoints",new List<JPos> {
                         new JPos(10, -30, 10, 30, 10, 15, 10, -15, 10),
                         new JPos(20, -60, -10, 60, -10, 30, 20, -30, 20)
                     } },
-                }, new Dictionary<string, FlexivData> {
-                    {"lockExternalAxes", 0 }
                 });
                 // Wait for reached target
-                while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
                     "reachedTarget", out var flag) && flag == 1))
                 {
                     Utility.SpdlogInfo("Current primitive states:");
-                    Console.WriteLine(Utility.FlexivDataDictToString(robot.GetPrimitiveStates()));
+                    Console.WriteLine(Utility.FlexivDataTypesDictToString(robot.primitive_states()));
                     Thread.Sleep(1000);
                 }
                 // (3) Move robot TCP to a target pose in world (base) frame
                 Utility.SpdlogInfo("Executing primitive: MoveL");
-                robot.ExecutePrimitive("MoveL", new Dictionary<string, FlexivData> {
+                robot.ExecutePrimitive("MoveL", new Dictionary<string, FlexivDataTypes> {
                     {"target", new Coord(0.65, -0.3, 0.2, 180, 0, 180) },  // unit: m-deg
                     {"waypoints", new List<Coord>
                     {
@@ -102,21 +100,21 @@ Optional arguments:
                     {"vel", 0.6 },
                     {"zoneRadius", "Z50" }
                 });
-                while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
                     "reachedTarget", out var flag) && flag == 1))     // Wait for reached target
                 {
                     Thread.Sleep(1000);
                 }
                 // (4) Another MoveL that uses TCP frame
                 Utility.SpdlogInfo("Executing primitive: MoveL");
-                robot.ExecutePrimitive("MoveL", new Dictionary<string, FlexivData> {
+                robot.ExecutePrimitive("MoveL", new Dictionary<string, FlexivDataTypes> {
                     // x y z qw qx qy qz
                     {"target", new Coord(0.0, 0.0, 0.0, 0.9185587, 0.1767767, 0.3061862, 0.1767767,
                         "TRAJ", "START") },
                     {"vel", 0.2 }
                 });
                 // Wait for reached target
-                while (!(FlexivDataUtils.TryGet<int>(robot.GetPrimitiveStates(),
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
                     "reachedTarget", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);

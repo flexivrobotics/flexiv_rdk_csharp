@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics1DisplayRobotStates : IExample
     {
@@ -25,7 +25,7 @@ Optional arguments:
             while (true)
             {
                 Utility.SpdlogInfo("Current robot states:");
-                Console.WriteLine(robot.GetStates().ToString());
+                Console.WriteLine(robot.states().ToString());
                 Thread.Sleep(1000);
             }
         }
@@ -45,7 +45,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -60,7 +60,7 @@ Optional arguments:
                 Utility.SpdlogInfo("Enabling robot ...");
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics7AutoRecovery : IExample
     {
@@ -45,7 +45,7 @@ Optional arguments:
                 Thread.Sleep(8000);
                 // Run automatic recovery if the system is in recovery state, the involved joints will starts
                 // to move back into allowed position range
-                if (robot.IsRecovery())
+                if (robot.recovery())
                     robot.RunAutoRecovery();
                 // Otherwise the system is normal, do nothing
                 else

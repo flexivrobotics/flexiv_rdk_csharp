@@ -3,8 +3,20 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ToolParams
+    {
+        public double Mass;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public double[] CoM;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+        public double[] Inertia;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
+        public double[] TcpLocation;
+    }
+
     public class Tool : IDisposable
     {
         private IntPtr _toolPtr;
@@ -51,27 +63,29 @@ namespace FlexivRdkCSharp.FlexivRdk
             {
                 WriteIndented = false,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new FlexivDataJsonConverter() }
+                Converters = { new FlexivDataTypesJsonConverter() }
             };
             ThrowRdkException(error);
         }
 
         ~Tool() => Dispose(false);
 
-        public List<string> GetToolNames()
+        public List<string> list()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetToolNames(_toolPtr, ref error);
             ThrowRdkException(error);
             string str = Marshal.PtrToStringAnsi(ptr);
-            NativeFlexivRdk.FreeString(ptr);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
+
+
+
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
             string json = JsonSerializer.Serialize(tmp, _options);
             var ret = (List<string>)tmp["tool_list"];
             return new List<string>(ret);
         }
 
-        public string GetToolName()
+        public string name()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetToolName(_toolPtr, ref error);
@@ -81,7 +95,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             return str;
         }
 
-        public bool HasTool(string toolName)
+        public bool exist(string toolName)
         {
             FlexivError error = new();
             int flag = NativeFlexivRdk.HasTool(_toolPtr, toolName, ref error);
@@ -89,7 +103,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             return flag != 0;
         }
 
-        public ToolParams GetToolParams()
+        public ToolParams GetParams()
         {
             FlexivError error = new();
             ToolParams toolParams = new();
@@ -98,7 +112,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             return toolParams;
         }
 
-        public ToolParams GetToolParams(string toolName)
+        public ToolParams GetParams(string toolName)
         {
             FlexivError error = new();
             ToolParams toolParams = new();
@@ -107,32 +121,41 @@ namespace FlexivRdkCSharp.FlexivRdk
             return toolParams;
         }
 
-        public void AddNewTool(string toolName, ToolParams toolParams)
+        public void Add(string toolName, ToolParams toolParams)
         {
             FlexivError error = new();
             NativeFlexivRdk.AddNewTool(_toolPtr, toolName, ref toolParams, ref error);
             ThrowRdkException(error);
         }
 
-        public void SwitchTool(string toolName)
+        public void Switch(string toolName)
         {
             FlexivError error = new();
             NativeFlexivRdk.SwitchTool(_toolPtr, toolName, ref error);
             ThrowRdkException(error);
         }
 
-        public void UpdateTool(string toolName, ToolParams toolParams)
+        public void Update(string toolName, ToolParams toolParams)
         {
             FlexivError error = new();
             NativeFlexivRdk.UpdateTool(_toolPtr, toolName, ref toolParams, ref error);
             ThrowRdkException(error);
         }
 
-        public void RemoveTool(string toolName)
+        public void Remove(string toolName)
         {
             FlexivError error = new();
             NativeFlexivRdk.RemoveTool(_toolPtr, toolName, ref error);
             ThrowRdkException(error);
+        }
+
+        public ToolParams CalibratePayloadParams(bool toolMounted)
+        {
+            FlexivError error = new();
+            ToolParams param = new();
+            NativeFlexivRdk.CalibratePayloadParams(_toolPtr, toolMounted ? 1 : 0, ref param, ref error);
+            ThrowRdkException(error);
+            return param;
         }
     }
 }

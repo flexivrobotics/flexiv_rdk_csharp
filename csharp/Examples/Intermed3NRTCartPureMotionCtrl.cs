@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Intermed3NRTCartPureMotionCtrl : IExample
     {
@@ -65,7 +65,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -80,7 +80,7 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -90,19 +90,19 @@ Optional arguments:
                 robot.SwitchMode(RobotMode.NRT_PLAN_EXECUTION);
                 robot.ExecutePlan("PLAN-Home");
                 // Wait for the plan to finish
-                while (robot.IsBusy())
+                while (robot.busy())
                 {
                     Thread.Sleep(1000);
                 }
                 // Zero Force-torque Sensor
                 robot.SwitchMode(RobotMode.NRT_PRIMITIVE_EXECUTION);
                 // IMPORTANT: must zero force/torque sensor offset for accurate force/torque measurement
-                robot.ExecutePrimitive("ZeroFTSensor", new Dictionary<string, FlexivData> { });
+                robot.ExecutePrimitive("ZeroFTSensor", new Dictionary<string, FlexivDataTypes> { });
                 // WARNING: during the process, the robot must not contact anything, otherwise the result
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
                 // Wait for primitive completion
-                while (robot.IsBusy())
+                while (robot.busy())
                 {
                     Thread.Sleep(1000);
                 }
@@ -110,9 +110,9 @@ Optional arguments:
                 // Switch to non-real-time mode for discrete motion control
                 robot.SwitchMode(RobotMode.NRT_CARTESIAN_MOTION_FORCE);
                 // Set initial pose to current TCP pose
-                var initPose = (double[])robot.GetStates().TcpPose.Clone();
+                var initPose = (double[])robot.states().TcpPose.Clone();
                 // Save initial joint positions
-                var initQ = (double[])robot.GetStates().Q.Clone();
+                var initQ = (double[])robot.states().Q.Clone();
                 // Periodic Task, set loop period
                 double period = 1.0 / frequency;
                 int loopCounter = 0;
@@ -124,7 +124,7 @@ Optional arguments:
                     // Use sleep to control loop period
                     Thread.Sleep(time);
                     // Monitor fault on the connected robot
-                    if (robot.IsFault())
+                    if (robot.fault())
                     {
                         Utility.SpdlogError("Fault occurred on the connected robot, exiting ...");
                         return;
@@ -152,7 +152,7 @@ Optional arguments:
                     // Online change stiffness to half of nominal at 6 seconds
                     else if ((int)timeElapsed % 20 == 6)
                     {
-                        var newK = robot.GetInfo().KxNom.Select(k => k * 0.5).ToArray();
+                        var newK = robot.info().KxNom.Select(k => k * 0.5).ToArray();
                         robot.SetCartesianImpedance(newK);
                         Utility.SpdlogInfo($"Cartesian stiffness set to: " + string.Join(", ", newK.Select(v => v.ToString("F6"))));
                     }
@@ -166,7 +166,7 @@ Optional arguments:
                     // Online reset impedance properties to nominal at 12 seconds
                     else if ((int)timeElapsed % 20 == 12)
                     {
-                        robot.SetCartesianImpedance(robot.GetInfo().KxNom);
+                        robot.SetCartesianImpedance(robot.info().KxNom);
                         Utility.SpdlogInfo("Cartesian impedance properties are reset");
                     }
                     // Online reset reference joint positions to nominal at 14 seconds
@@ -194,11 +194,11 @@ Optional arguments:
                     if (collision)
                     {
                         bool collisionDetected = false;
-                        var f = robot.GetStates().ExtWrenchInWorld;
+                        var f = robot.states().ExtWrenchInWorld;
                         var forceNorm = Math.Sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
                         if (forceNorm > EXT_FORCE_THRESHOLD)
                             collisionDetected = true;
-                        foreach (var tau in robot.GetStates().TauExt)
+                        foreach (var tau in robot.states().TauExt)
                         {
                             if (Math.Abs(tau) > EXT_TORQUE_THRESHOLD)
                             {

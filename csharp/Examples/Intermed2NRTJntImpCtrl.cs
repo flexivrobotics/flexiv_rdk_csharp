@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Intermed2NRTJntImpCtrl : IExample
     {
@@ -45,7 +45,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -60,7 +60,7 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -70,7 +70,7 @@ Optional arguments:
                 robot.SwitchMode(RobotMode.NRT_PLAN_EXECUTION);
                 robot.ExecutePlan("PLAN-Home");
                 // Wait for the plan to finish
-                while (robot.IsBusy())
+                while (robot.busy())
                 {
                     Thread.Sleep(1000);
                 }
@@ -80,10 +80,10 @@ Optional arguments:
                 int loopCounter = 0;
                 Utility.SpdlogInfo($"Sending command to robot at {frequency} Hz, or {period} seconds interval");
                 // Use current robot joint positions as initial positions
-                double[] initPos = (double[])robot.GetStates().Q.Clone();
+                double[] initPos = (double[])robot.states().Q.Clone();
                 Utility.SpdlogInfo("Initial positions set to: " + string.Join(", ", initPos.Select(v => v.ToString("F6"))));
                 // Robot joint degrees of freedom
-                int dof = robot.GetInfo().DoF;
+                int dof = robot.info().DoF;
                 // Initialize target vectors
                 double[] targetPos = (double[])initPos.Clone();
                 double[] targetVel = new double[dof];
@@ -108,7 +108,7 @@ Optional arguments:
                 {
                     // Use sleep to control loop period
                     Thread.Sleep(time);
-                    if (robot.IsFault())
+                    if (robot.fault())
                     {
                         Utility.SpdlogError("Fault occurred on the connected robot, exiting ...");
                         return;
@@ -125,14 +125,14 @@ Optional arguments:
                     // Reduce stiffness to half of nominal values after 5 seconds
                     if (loopCounter == (int)(5 / period))
                     {
-                        double[] newKq = robot.GetInfo().KqNom.Select(k => k * 0.5).ToArray();
+                        double[] newKq = robot.info().KqNom.Select(k => k * 0.5).ToArray();
                         robot.SetJointImpedance(newKq);
                         Utility.SpdlogInfo("Joint stiffness set to: " + string.Join(", ", newKq.Select(v => v.ToString("F6"))));
                     }
                     // Reset impedance properties to nominal values after another 5 seconds
                     if (loopCounter == (int)(10 / period))
                     {
-                        robot.SetJointImpedance(robot.GetInfo().KqNom);
+                        robot.SetJointImpedance(robot.info().KqNom);
                         Utility.SpdlogInfo("Joint stiffness reset to nominal.");
                     }
                     // Send commands

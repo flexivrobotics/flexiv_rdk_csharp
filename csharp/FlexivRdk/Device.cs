@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public class Device : IDisposable
     {
@@ -57,7 +57,7 @@ namespace FlexivRdkCSharp.FlexivRdk
 
         ~Device() => Dispose(false);
 
-        public Dictionary<string, bool> GetDevicesList()
+        public Dictionary<string, bool> list()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetDevicesList(_devicePtr, ref error);
@@ -69,7 +69,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             return new Dictionary<string, bool>(tmp);
         }
 
-        public bool HasDevice(string deviceName)
+        public bool exist(string deviceName)
         {
             FlexivError error = new();
             int flag = NativeFlexivRdk.HasDevice(_devicePtr, deviceName, ref error);
@@ -77,21 +77,35 @@ namespace FlexivRdkCSharp.FlexivRdk
             return flag != 0;
         }
 
-        public void EnableDevice(string deviceName)
+        // Uses partial types: Int, Double, String, VectorDouble, and VectorString from FlexivDataType.
+        // Represents the DeviceParamDataTypes defined in the C++ API.
+        public Dictionary<string, FlexivDataTypes> GetParams(string deviceName)
+        {
+            FlexivError error = new();
+            IntPtr ptr = NativeFlexivRdk.GetDeviceParams(_devicePtr, deviceName, ref error);
+            ThrowRdkException(error);
+            string str = Marshal.PtrToStringAnsi(ptr);
+            NativeFlexivRdk.FreeString(ptr);
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
+            if (tmp == null) tmp = new Dictionary<string, FlexivDataTypes>();
+            return new Dictionary<string, FlexivDataTypes>(tmp);
+        }
+
+        public void Enable(string deviceName)
         {
             FlexivError error = new();
             NativeFlexivRdk.EnableDevice(_devicePtr, deviceName, ref error);
             ThrowRdkException(error);
         }
 
-        public void DisableDevice(string deviceName)
+        public void Disable(string deviceName)
         {
             FlexivError error = new();
             NativeFlexivRdk.DisableDevice(_devicePtr, deviceName, ref error);
             ThrowRdkException(error);
         }
 
-        public void SendCommands(string deviceName, Dictionary<string, object> cmds)
+        public void Command(string deviceName, Dictionary<string, object> cmds)
         {
             FlexivError error = new();
             string str = JsonSerializer.Serialize(cmds, _options);

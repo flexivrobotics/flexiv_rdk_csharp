@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics4PlanExecution : IExample
     {
@@ -38,7 +38,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -53,14 +53,14 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
                 Utility.SpdlogInfo("Robot is now operational");
                 // Switch to plan execution mode
                 robot.SwitchMode(RobotMode.NRT_PLAN_EXECUTION);
-                while (!robot.IsFault())
+                while (!robot.fault())
                 {
                     Utility.SpdlogInfo("Choose an action:");
                     Console.WriteLine("  [1] Show available plans");
@@ -83,7 +83,7 @@ Optional arguments:
                     switch (choice)
                     {
                         case 1:
-                            var plan_list = robot.GetPlanList();
+                            var plan_list = robot.plan_list();
                             for (int i = 0; i < plan_list.Count; i++)
                             {
                                 Console.WriteLine($"[{i}] {plan_list[i]}");
@@ -95,10 +95,10 @@ Optional arguments:
                             isValid = int.TryParse(user_input, out choice);
                             if (!isValid) break;
                             robot.ExecutePlan(choice, true);
-                            while (robot.IsBusy())
+                            while (robot.busy())
                             {
                                 Utility.SpdlogInfo("Current plan info:");
-                                Console.WriteLine(robot.GetPlanInfo().ToString());
+                                Console.WriteLine(robot.plan_info().ToString());
                                 Thread.Sleep(1000);
                             }
                             break;
@@ -106,10 +106,10 @@ Optional arguments:
                             Console.WriteLine("Enter plan name to execute:");
                             user_input = Console.ReadLine();
                             robot.ExecutePlan(user_input, true);
-                            while (robot.IsBusy())
+                            while (robot.busy())
                             {
                                 Utility.SpdlogInfo("Current plan info:");
-                                Console.WriteLine(robot.GetPlanInfo().ToString());
+                                Console.WriteLine(robot.plan_info().ToString());
                                 Thread.Sleep(1000);
                             }
                             break;
