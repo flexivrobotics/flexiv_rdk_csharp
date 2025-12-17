@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using FlexivRdkCSharp.Examples;
+using Examples;
 
 namespace FlexivRdkCSharp
 {
@@ -21,6 +21,7 @@ namespace FlexivRdkCSharp
             new Intermed2NRTJntImpCtrl(),
             new Intermed3NRTCartPureMotionCtrl(),
             new Intermed4NRTCartMotionForceCtrl(),
+            new Intermed5RobotDynamics(),
         };
 
         static void Main(string[] args)

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics9GlobalVariables : IExample
     {
@@ -35,7 +35,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -50,13 +50,13 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
                 Utility.SpdlogInfo("Robot is now operational");
                 // Get existing global variables
-                var globalVars = robot.GetGlobalVariables();
+                var globalVars = robot.global_variables();
                 if (globalVars.Count == 0)
                 {
                     Utility.SpdlogWarn("No global variables available");
@@ -65,12 +65,12 @@ Optional arguments:
                 else
                 {
                     Utility.SpdlogInfo("Existing global variables and their original values:");
-                    Console.WriteLine(Utility.FlexivDataDictToString(globalVars));
+                    Console.WriteLine(Utility.FlexivDataTypesDictToString(globalVars));
                 }
                 // Set global variables
                 // WARNING: These specified global variables need to be created first using Flexiv Elements
                 Utility.SpdlogInfo("Setting new values to existing global variables");
-                robot.SetGlobalVariables(new Dictionary<string, FlexivData> {
+                robot.SetGlobalVariables(new Dictionary<string, FlexivDataTypes> {
                     {"test_bool", 1},
                     {"test_int", 100},
                     {"test_double", 100.123},
@@ -89,7 +89,7 @@ Optional arguments:
                     }},
                 });
                 // Get updated global variables
-                globalVars = robot.GetGlobalVariables();
+                globalVars = robot.global_variables();
                 if (globalVars.Count == 0)
                 {
                     Utility.SpdlogWarn("No global variables available");
@@ -98,7 +98,7 @@ Optional arguments:
                 else
                 {
                     Utility.SpdlogInfo("Existing global variables and their original values:");
-                    Console.WriteLine(Utility.FlexivDataDictToString(globalVars));
+                    Console.WriteLine(Utility.FlexivDataTypesDictToString(globalVars));
                 }
                 Utility.SpdlogInfo("Program finished");
             }

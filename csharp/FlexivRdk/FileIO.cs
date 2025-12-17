@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public class FileIO : IDisposable
     {
@@ -43,10 +46,38 @@ namespace FlexivRdkCSharp.FlexivRdk
 
         ~FileIO() => Dispose(false);
 
+        public List<string> traj_files_list()
+        {
+            FlexivError error = new();
+            IntPtr ptr = NativeFlexivRdk.GetTrajFilesList(_fileIOPtr, ref error);
+            ThrowRdkException(error);
+            string str = Marshal.PtrToStringAnsi(ptr);
+            NativeFlexivRdk.FreeString(ptr);
+            List<string> ret = JsonSerializer.Deserialize<List<string>>(str);
+            return new List<string>(ret);
+        }
+
         public void UploadTrajFile(string fileDir, string fileName)
         {
             FlexivError error = new();
             NativeFlexivRdk.UploadTrajFile(_fileIOPtr, fileDir, fileName, ref error);
+            ThrowRdkException(error);
+        }
+
+        public string DownloadTrajFile(string fileName)
+        {
+            FlexivError error = new();
+            IntPtr ptr = NativeFlexivRdk.DownloadTrajFile(_fileIOPtr, fileName, ref error);
+            ThrowRdkException(error);
+            string str = Marshal.PtrToStringAnsi(ptr);
+            NativeFlexivRdk.FreeString(ptr);
+            return str;
+        }
+
+        public void DownloadTrajFile(string fileName, string saveDir)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.DownloadTrajFile2(_fileIOPtr, fileName, saveDir, ref error);
             ThrowRdkException(error);
         }
     }

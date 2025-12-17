@@ -23,6 +23,9 @@
 #include <flexiv\rdk\gripper.hpp>
 #include <flexiv\rdk\file_io.hpp>
 #include <flexiv\rdk\device.hpp>
+#include <flexiv\rdk\maintenance.hpp>
+#include <flexiv\rdk\safety.hpp>
+#include <flexiv\rdk\model.hpp>
 #include "json.hpp"
 using json = nlohmann::json;
 using namespace flexiv::rdk;
@@ -55,11 +58,7 @@ struct WRobotState {
 	double tau_des[kSerialJointDoF];
 	double tau_dot[kSerialJointDoF];
 	double tau_ext[kSerialJointDoF];
-	double q_e[kMaxExtAxes];
-	double dq_e[kMaxExtAxes];
-	double tau_e[kMaxExtAxes];
 	double tcp_pose[kPoseSize];
-	double tcp_pose_des[kPoseSize];
 	double tcp_vel[kCartDoF];
 	double flange_pose[kPoseSize];
 	double ft_sensor_raw[kCartDoF];
@@ -87,10 +86,27 @@ struct WToolParams {
 	double TcpLocation[kPoseSize];
 };
 
+struct WGripperParams {
+	char name[256];
+	double min_width;
+	double max_width;
+	double min_vel;
+	double max_vel;
+	double min_force;
+	double max_force;
+};
+
 struct WGripperStates {
 	double width;
 	double force;
-	double max_width;
+	int is_moving;
+};
+
+struct WSafetyLimits {
+	double q_min[kSerialJointDoF];
+	double q_max[kSerialJointDoF];
+	double dq_max_normal[kSerialJointDoF];
+	double dq_max_reduced[kSerialJointDoF];
 };
 
 void CopyExceptionMsg(const std::exception& e, FlexivError* error) {
@@ -112,14 +128,35 @@ void CopyMsgSrc2Dst(const char* src, char* dst, size_t dstSize) {
 }
 
 namespace flexiv::rdk {
+	NLOHMANN_JSON_SERIALIZE_ENUM(RobotEvent::Level, {
+		{ RobotEvent::Level::UNKNOWN, "UNKNOWN" },
+		{ RobotEvent::Level::INFO, "INFO" },
+		{ RobotEvent::Level::WARNING, "WARNING" },
+		{ RobotEvent::Level::ERROR, "ERROR" },
+		{ RobotEvent::Level::CRITICAL, "CRITICAL" },
+	})
+
+	inline void to_json(json& j, const RobotEvent& event) {
+		using namespace std::chrono;
+		j = json{
+			{"Level", event.level},
+			{"ID", event.id},
+			{"Description", event.description},
+			{"Consequence", event.consequences},
+			{"ProbableCause", event.probable_causes},
+			{"RecommendedActions", event.recommended_actions},
+			{"Timestamp", duration_cast<milliseconds>(event.timestamp.time_since_epoch()).count()}
+		};
+	}
+
 	inline void from_json(const json& j, JPos& pos) {
-		j.at("q").get_to(pos.q);
+		j.at("q_m").get_to(pos.q_m);
 		j.at("q_e").get_to(pos.q_e);
 	}
 
 	inline void to_json(json& j, const JPos& pos) {
 		j = json{
-			{"q", pos.q},
+			{"q_m", pos.q_m},
 			{"q_e", pos.q_e}
 		};
 	}
@@ -128,7 +165,7 @@ namespace flexiv::rdk {
 		j.at("position").get_to(coord.position);
 		j.at("orientation").get_to(coord.orientation);
 		j.at("ref_frame").get_to(coord.ref_frame);
-		j.at("ref_q").get_to(coord.ref_q);
+		j.at("ref_q_m").get_to(coord.ref_q_m);
 		j.at("ref_q_e").get_to(coord.ref_q_e);
 	}
 
@@ -137,7 +174,7 @@ namespace flexiv::rdk {
 			{"position", coord.position},
 			{"orientation", coord.orientation},
 			{"ref_frame", coord.ref_frame},
-			{"ref_q", coord.ref_q},
+			{"ref_q_m", coord.ref_q_m},
 			{"ref_q_e", coord.ref_q_e}
 		};
 	}

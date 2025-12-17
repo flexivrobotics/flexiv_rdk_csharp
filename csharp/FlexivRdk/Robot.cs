@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public class Robot : IDisposable
     {
@@ -41,16 +41,16 @@ namespace FlexivRdkCSharp.FlexivRdk
             }
         }
 
-        public Robot(string robotSN, string[] networkInterfaceWhiteList = null)
+        public Robot(string robotSN, string[] networkInterfaceWhiteList = null, bool verbose = true)
         {
             FlexivError error = new();
             string[] interfaces = networkInterfaceWhiteList ?? Array.Empty<string>();
-            _flexivRobotPtr = NativeFlexivRdk.CreateFlexivRobot(robotSN, interfaces, interfaces.Length, ref error);
+            _flexivRobotPtr = NativeFlexivRdk.CreateFlexivRobot(robotSN, interfaces, interfaces.Length, verbose ? 1 : 0, ref error);
             _options = new JsonSerializerOptions
             {
                 WriteIndented = false,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new FlexivDataJsonConverter() }
+                Converters = { new FlexivDataTypesJsonConverter() }
             };
             ThrowRdkException(error);
         }
@@ -58,84 +58,87 @@ namespace FlexivRdkCSharp.FlexivRdk
         ~Robot() => Dispose(false);
 
         //========================================= ACCESSORS ==========================================
-        public bool IsConnected()
+        public bool connected()
         {
             return NativeFlexivRdk.IsConnected(_flexivRobotPtr) != 0;
         }
 
-        public RobotInfo GetInfo()
+        public RobotInfo info()
         {
             RobotInfo robotInfo = new();
             NativeFlexivRdk.GetInfo(_flexivRobotPtr, ref robotInfo);
             return robotInfo;
         }
 
-        public RobotMode GetMode()
+        public RobotMode mode()
         {
             return (RobotMode)NativeFlexivRdk.GetMode(_flexivRobotPtr);
         }
 
-        public RobotState GetStates()
+        public RobotStates states()
         {
-            RobotState robot_state = new();
+            RobotStates robot_state = new();
             NativeFlexivRdk.GetStates(_flexivRobotPtr, ref robot_state);
             return robot_state;
         }
 
-        public bool IsStopped()
+        public bool stopped()
         {
             return NativeFlexivRdk.IsStopped(_flexivRobotPtr) != 0;
         }
 
-        public bool IsOperational(bool verbose = true)
+        public bool operational()
         {
-            return NativeFlexivRdk.IsOperational(_flexivRobotPtr, verbose ? 1 : 0) != 0;
+            return NativeFlexivRdk.IsOperational(_flexivRobotPtr) != 0;
         }
 
-        public OperationalStatus GetOperationalStatus()
+        public OperationalStatus operational_status()
         {
             return (OperationalStatus)NativeFlexivRdk.GetOperationalStatus(_flexivRobotPtr);
         }
 
-        public bool IsBusy()
+        public bool busy()
         {
             return NativeFlexivRdk.IsBusy(_flexivRobotPtr) != 0;
         }
 
-        public bool IsFault()
+        public bool fault()
         {
             return NativeFlexivRdk.IsFault(_flexivRobotPtr) != 0;
         }
 
-        public bool IsReduced()
+        public bool reduced()
         {
             return NativeFlexivRdk.IsReduced(_flexivRobotPtr) != 0;
         }
 
-        public bool IsRecovery()
+        public bool recovery()
         {
             return NativeFlexivRdk.IsRecovery(_flexivRobotPtr) != 0;
         }
 
-        public bool IsEstopReleased()
+        public bool estop_released()
         {
             return NativeFlexivRdk.IsEstopReleased(_flexivRobotPtr) != 0;
         }
 
-        public bool IsEnablingButtonReleased()
+        public bool enabling_button_pressed()
         {
             return NativeFlexivRdk.IsEnablingButtonReleased(_flexivRobotPtr) != 0;
         }
 
-        public List<string> GetMuLog()
+        public List<RobotEvent> event_log()
         {
-            IntPtr ptr = NativeFlexivRdk.GetMuLog(_flexivRobotPtr);
+            IntPtr ptr = NativeFlexivRdk.GetEventLog(_flexivRobotPtr);
             string str = Marshal.PtrToStringAnsi(ptr);
             NativeFlexivRdk.FreeString(ptr);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
-            string json = JsonSerializer.Serialize(tmp, _options);
-            var ret = (List<string>)(tmp["mu_log"]);
-            return new List<string>(ret);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = false,
+                PropertyNameCaseInsensitive = true,
+            };
+            List<RobotEvent> ret = JsonSerializer.Deserialize<List<RobotEvent>>(str, options);
+            return new List<RobotEvent>(ret);
         }
 
         //======================================= SYSTEM CONTROL =======================================
@@ -182,7 +185,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void SetGlobalVariables(Dictionary<string, FlexivData> globalVars)
+        public void SetGlobalVariables(Dictionary<string, FlexivDataTypes> globalVars)
         {
             FlexivError error = new();
             string json_str = JsonSerializer.Serialize(globalVars, _options);
@@ -190,16 +193,23 @@ namespace FlexivRdkCSharp.FlexivRdk
             ThrowRdkException(error);
         }
 
-        public Dictionary<string, FlexivData> GetGlobalVariables()
+        public Dictionary<string, FlexivDataTypes> global_variables()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetGlobalVariables(_flexivRobotPtr, ref error);
             ThrowRdkException(error);
-            NativeFlexivRdk.FreeString(ptr);
             string str = Marshal.PtrToStringAnsi(ptr);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
-            if (tmp == null) tmp = new Dictionary<string, FlexivData>();
-            return new Dictionary<string, FlexivData>(tmp);
+            NativeFlexivRdk.FreeString(ptr);
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
+            if (tmp == null) tmp = new Dictionary<string, FlexivDataTypes>();
+            return new Dictionary<string, FlexivDataTypes>(tmp);
+        }
+
+        public void LockExternalAxes(bool toggle)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.LockExternalAxes(_flexivRobotPtr, toggle ? 1 : 0, ref error);
+            ThrowRdkException(error);
         }
 
         //======================================= PLAN EXECUTION =======================================
@@ -224,21 +234,20 @@ namespace FlexivRdkCSharp.FlexivRdk
             ThrowRdkException(error);
         }
 
-        public List<string> GetPlanList()
+        public List<string> plan_list()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetPlanList(_flexivRobotPtr, ref error);
             ThrowRdkException(error);
             string str = Marshal.PtrToStringAnsi(ptr);
             NativeFlexivRdk.FreeString(ptr);
-            Console.WriteLine(str);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
             string json = JsonSerializer.Serialize(tmp, _options);
             var ret = (List<string>)(tmp["plan_list"]);
             return new List<string>(ret);
         }
 
-        public PlanInfo GetPlanInfo()
+        public PlanInfo plan_info()
         {
             PlanInfo plan_info = new();
             FlexivError error = new FlexivError();
@@ -270,28 +279,26 @@ namespace FlexivRdkCSharp.FlexivRdk
 
         //==================================== PRIMITIVE EXECUTION =====================================
         public void ExecutePrimitive(string primitiveName,
-            Dictionary<string, FlexivData> inputParams,
-            Dictionary<string, FlexivData> properties = null,
+            Dictionary<string, FlexivDataTypes> inputParams,
             bool blockUntilStarted = true)
         {
             FlexivError error = new();
             string input_params = JsonSerializer.Serialize(inputParams, _options);
-            string pro = properties != null ? JsonSerializer.Serialize(properties, _options) : "{}";
             NativeFlexivRdk.ExecutePrimitive(_flexivRobotPtr, primitiveName,
-                input_params, pro, blockUntilStarted ? 1 : 0, ref error);
+                input_params, blockUntilStarted ? 1 : 0, ref error);
             ThrowRdkException(error);
         }
 
-        public Dictionary<string, FlexivData> GetPrimitiveStates()
+        public Dictionary<string, FlexivDataTypes> primitive_states()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetPrimitiveStates(_flexivRobotPtr, ref error);
             ThrowRdkException(error);
-            NativeFlexivRdk.FreeString(ptr);
             string str = Marshal.PtrToStringAnsi(ptr);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
-            if (tmp == null) tmp = new Dictionary<string, FlexivData>();
-            return new Dictionary<string, FlexivData>(tmp);
+            NativeFlexivRdk.FreeString(ptr);
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
+            if (tmp == null) tmp = new Dictionary<string, FlexivDataTypes>();
+            return new Dictionary<string, FlexivDataTypes>(tmp);
         }
 
         //==================================== DIRECT JOINT CONTROL ====================================

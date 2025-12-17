@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 using System.Linq;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     class Basics5ZeroFTSensor : IExample
     {
@@ -38,7 +38,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -53,26 +53,27 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
                 Utility.SpdlogInfo($"TCP force and moment reading in base frame BEFORE sensor zeroing: " +
-                    $"{string.Join(", ", robot.GetStates().ExtWrenchInWorld.Select(x => x.ToString("F3")))} N-Nm");
+                    $"{string.Join(", ", robot.states().ExtWrenchInWorld.Select(x => x.ToString("F3")))} N-Nm");
                 // Run the "ZeroFTSensor" primitive to automatically zero force and torque sensors
                 robot.SwitchMode(RobotMode.NRT_PRIMITIVE_EXECUTION);
-                robot.ExecutePrimitive("ZeroFTSensor", new Dictionary<string, FlexivData>());
+                robot.ExecutePrimitive("ZeroFTSensor", new Dictionary<string, FlexivDataTypes>());
                 // WARNING: during the process, the robot must not contact anything, otherwise the result
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
                 // Wait for the primitive completion
-                while (robot.IsBusy())
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
+                    "terminated", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);
                 }
                 Utility.SpdlogInfo("Sensor zeroing complete");
                 Utility.SpdlogInfo($"TCP force and moment reading in base frame BEFORE sensor zeroing: " +
-                    $"{string.Join(", ", robot.GetStates().ExtWrenchInWorld.Select(x => x.ToString("F3")))} N-Nm");
+                    $"{string.Join(", ", robot.states().ExtWrenchInWorld.Select(x => x.ToString("F3")))} N-Nm");
             }
             catch (Exception ex)
             {

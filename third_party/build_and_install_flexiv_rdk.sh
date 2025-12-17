@@ -16,14 +16,14 @@ fi
 cd $SCRIPTPATH/flexiv_rdk
 # Use specific version
 git fetch -p
-git checkout v1.5.1
+git checkout v1.7
 # git submodule update --init --recursive
 # Build and install dependencies 
 cd thirdparty
 bash build_and_install_dependencies.sh $INSTALL_DIR/rdk_install
 cd ..
 # Configure CMake
-cmake -B build -DCMAKE_PREFIX_PATH=$INSTALL_DIR/rdk_install
+cmake -S . -B build -DCMAKE_PREFIX_PATH=$INSTALL_DIR/rdk_install
 # Build and install
 cmake --build build --target install --config release -j $NUM_JOBS
 echo ">>> Installed components: flexiv rdk"

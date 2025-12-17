@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using FlexivRdkCSharp.FlexivRdk;
+using FlexivRdk;
 
-namespace FlexivRdkCSharp.Examples
+namespace Examples
 {
     public class Intermed4NRTCartMotionForceCtrl : IExample
     {
@@ -79,7 +79,7 @@ Optional arguments:
                 // Instantiate robot interface
                 var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
-                if (robot.IsFault())
+                if (robot.fault())
                 {
                     Utility.SpdlogWarn("Fault occurred on the connected robot, trying to clear ...");
                     // Try to clear the fault
@@ -94,7 +94,7 @@ Optional arguments:
                 // Enable the robot, make sure the E-stop is released before enabling
                 robot.Enable();
                 // Wait for the robot to become operational
-                while (!robot.IsOperational())
+                while (!robot.operational())
                 {
                     Thread.Sleep(1000);
                 }
@@ -104,7 +104,8 @@ Optional arguments:
                 robot.SwitchMode(RobotMode.NRT_PLAN_EXECUTION);
                 robot.ExecutePlan("PLAN-Home");
                 // Wait for the plan to finish
-                while (robot.IsBusy())
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
+                    "terminated", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);
                 }
@@ -112,12 +113,12 @@ Optional arguments:
                 // Zero Force-torque Sensor
                 robot.SwitchMode(RobotMode.NRT_PRIMITIVE_EXECUTION);
                 // IMPORTANT: must zero force/torque sensor offset for accurate force/torque measurement
-                robot.ExecutePrimitive("ZeroFTSensor", new Dictionary<string, FlexivData> { });
+                robot.ExecutePrimitive("ZeroFTSensor", new Dictionary<string, FlexivDataTypes>());
                 // WARNING: during the process, the robot must not contact anything, otherwise the result
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
                 // Wait for primitive completion
-                while (robot.IsBusy())
+                while (robot.busy())
                 {
                     Thread.Sleep(1000);
                 }
@@ -129,7 +130,7 @@ Optional arguments:
                 // control for example.
                 Utility.SpdlogInfo("Searching for contact ...");
                 // Set initial pose to current TCP pose
-                var initPose = (double[])robot.GetStates().TcpPose.Clone();
+                var initPose = (double[])robot.states().TcpPose.Clone();
                 Utility.SpdlogInfo("Initial TCP pose set to: " + string.Join(", ", initPose.Select(v => v.ToString("F6"))) +
                     " (position 3x1, rotation (quaternion) 4x1");
                 // Use non-real-time mode to make the robot go to a set point with its own motion generator
@@ -147,7 +148,7 @@ Optional arguments:
                 while (!IsContacted)
                 {
                     // Compute norm of sensed external force applied on robot TCP
-                    var f = robot.GetStates().ExtWrenchInWorld;
+                    var f = robot.states().ExtWrenchInWorld;
                     var forceNorm = Math.Sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
                     // Contact is considered to be made if sensed TCP force exceeds the threshold
                     if (forceNorm > PRESSING_FORCE)
@@ -181,7 +182,7 @@ Optional arguments:
                     double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity,
                     double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity });
                 // Update initial pose to current TCP pose
-                initPose = (double[])robot.GetStates().TcpPose.Clone();
+                initPose = (double[])robot.states().TcpPose.Clone();
                 Utility.SpdlogInfo("Initial TCP pose set to: " + string.Join(", ", initPose.Select(v => v.ToString("F6"))) +
                     " (position 3x1, rotation (quaternion) 4x1");
 
@@ -196,7 +197,7 @@ Optional arguments:
                     // Use sleep to control loop period
                     Thread.Sleep(time);
                     // Monitor fault on the connected robot
-                    if (robot.IsFault())
+                    if (robot.fault())
                     {
                         Utility.SpdlogError("Fault occurred on the connected robot, exiting ...");
                         return;

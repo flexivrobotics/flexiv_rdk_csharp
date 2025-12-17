@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     public class WorkCoord : IDisposable
     {
@@ -51,27 +51,27 @@ namespace FlexivRdkCSharp.FlexivRdk
             {
                 WriteIndented = false,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new FlexivDataJsonConverter() }
+                Converters = { new FlexivDataTypesJsonConverter() }
             };
             ThrowRdkException(error);
         }
 
         ~WorkCoord() => Dispose(false);
 
-        public List<string> GetWorkCoordNames()
+        public List<string> list()
         {
             FlexivError error = new();
             IntPtr ptr = NativeFlexivRdk.GetWorkCoordNames(_workCoordPtr, ref error);
             ThrowRdkException(error);
             string str = Marshal.PtrToStringAnsi(ptr);
             NativeFlexivRdk.FreeString(ptr);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivData>>(str, _options);
+            var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
             string json = JsonSerializer.Serialize(tmp, _options);
             var ret = (List<string>)tmp["work_coord_list"];
             return new List<string>(ret);
         }
 
-        public bool HasWorkCoord(string workCoordName)
+        public bool exist(string workCoordName)
         {
             FlexivError error = new();
             int flag = NativeFlexivRdk.HasWorkCoord(_workCoordPtr, workCoordName, ref error);
@@ -79,7 +79,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             return flag != 0;
         }
 
-        public double[] GetWorkCoordPose(string workCoordName)
+        public double[] pose(string workCoordName)
         {
             FlexivError error = new();
             double x = 0, y = 0, z = 0, qw = 0, qx = 0, qy = 0, qz = 0;
@@ -89,7 +89,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             return new double[] { x, y, z, qw, qx, qy, qz };
         }
 
-        public void AddWorkCoord(string workCoordName, double[] pose)
+        public void Add(string workCoordName, double[] pose)
         {
             if (pose.Length != FlexivConstants.kPoseSize)
                 throw new ArgumentException("FlexivRdk AddWorkCoord pose length must be 7");
@@ -98,7 +98,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void UpdateWorkCoord(string workCoordName, double[] pose)
+        public void Update(string workCoordName, double[] pose)
         {
             if (pose.Length != FlexivConstants.kPoseSize)
                 throw new ArgumentException("FlexivRdk UpdateWorkCoord pose length must be 7");
@@ -107,7 +107,7 @@ namespace FlexivRdkCSharp.FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void RemoveWorkCoord(string workCoordName)
+        public void Remove(string workCoordName)
         {
             FlexivError error = new();
             NativeFlexivRdk.RemoveWorkCoord(_workCoordPtr, workCoordName, ref error);

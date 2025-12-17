@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace FlexivRdkCSharp.FlexivRdk
+namespace FlexivRdk
 {
     internal static class NativeFlexivRdk
     {
@@ -22,7 +22,7 @@ namespace FlexivRdkCSharp.FlexivRdk
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr CreateFlexivRobot(string robotSN,
             [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] interfaces,
-            int interfaceCount, ref FlexivError error);
+            int interfaceCount, int verbose, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void DeleteFlexivRobot(IntPtr robot);
@@ -38,13 +38,13 @@ namespace FlexivRdkCSharp.FlexivRdk
         public static extern int GetMode(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void GetStates(IntPtr robot, ref RobotState robot_state);
+        public static extern void GetStates(IntPtr robot, ref RobotStates robot_state);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int IsStopped(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int IsOperational(IntPtr robot, int verbose);
+        public static extern int IsOperational(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GetOperationalStatus(IntPtr robot);
@@ -68,7 +68,7 @@ namespace FlexivRdkCSharp.FlexivRdk
         public static extern int IsEnablingButtonReleased(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr GetMuLog(IntPtr robot);
+        public static extern IntPtr GetEventLog(IntPtr robot);
 
         //======================================= SYSTEM CONTROL =======================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -94,6 +94,9 @@ namespace FlexivRdkCSharp.FlexivRdk
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetGlobalVariables(IntPtr robot, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void LockExternalAxes(IntPtr robot, int toggle, ref FlexivError error);
 
         //======================================= PLAN EXECUTION =======================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -125,7 +128,7 @@ namespace FlexivRdkCSharp.FlexivRdk
         //==================================== PRIMITIVE EXECUTION =====================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void ExecutePrimitive(IntPtr robot, string primitiveName, string inputParams,
-            string properties, int blockUntilStarted, ref FlexivError error);
+            int blockUntilStarted, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetPrimitiveStates(IntPtr robot, ref FlexivError error);
@@ -222,6 +225,9 @@ namespace FlexivRdkCSharp.FlexivRdk
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void RemoveTool(IntPtr tool, string name, ref FlexivError error);
 
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void CalibratePayloadParams(IntPtr tool, int toolMounted, ref ToolParams toolParams, ref FlexivError error);
+
         //======================================= WORK COORD =========================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr CreateWorkCoord(IntPtr robot, ref FlexivError error);
@@ -256,6 +262,12 @@ namespace FlexivRdkCSharp.FlexivRdk
         public static extern void DeleteGripper(IntPtr gripper);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void EnableGripper(IntPtr gripper, string name, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DisableGripper(IntPtr gripper, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Init(IntPtr gripper, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -268,7 +280,7 @@ namespace FlexivRdkCSharp.FlexivRdk
         public static extern void StopGripper(IntPtr gripper);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int GripperIsMoving(IntPtr gripper);
+        public static extern void GetGripperParams(IntPtr gripper, ref GripperParams param);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GetGripperStates(IntPtr gripper, ref GripperStates states);
@@ -281,7 +293,16 @@ namespace FlexivRdkCSharp.FlexivRdk
         public static extern void DeleteFileIO(IntPtr fileIO);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetTrajFilesList(IntPtr fileIO, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void UploadTrajFile(IntPtr fileIO, string fileDir, string fileName, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr DownloadTrajFile(IntPtr fileIO, string fileName, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DownloadTrajFile2(IntPtr fileIO, string fileName, string saveDir, ref FlexivError error);
 
         //========================================= DEVICE ===========================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -297,6 +318,9 @@ namespace FlexivRdkCSharp.FlexivRdk
         public static extern int HasDevice(IntPtr device, string deviceName, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr GetDeviceParams(IntPtr device, string deviceName, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void EnableDevice(IntPtr device, string deviceName, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -304,5 +328,84 @@ namespace FlexivRdkCSharp.FlexivRdk
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void SendCommands(IntPtr device, string deviceName, string cmds, ref FlexivError error);
+
+        //======================================= MAINTENANCE =========================================
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr CreateMaintenance(IntPtr robot, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DeleteMaintenance(IntPtr maintenance);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void CalibrateJointTorqueSensor(IntPtr maintenance,
+            double[] caliPosture, int caliPostureLen, ref FlexivError error);
+
+        //========================================= SAFETY ============================================
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr CreateSafety(IntPtr robot, string password, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DeleteSafety(IntPtr safety);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DefaultLimits(IntPtr safety, ref SafetyLimits limits);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void CurrentLimits(IntPtr safety, ref SafetyLimits limits);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetSafetyInputs(IntPtr safety, int[] temp);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetJointPositionLimits(IntPtr safety, double[] minPositions, int minLen,
+            double[] maxPositions, int maxLen, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetJointVelocityNormalLimits(IntPtr safety, double[] maxVel, int len, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetJointVelocityReducedLimits(IntPtr safety, double[] maxVel, int len, ref FlexivError error);
+
+        //========================================= MODEL ===========================================
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr CreateModel(IntPtr robot, double gravityX, double gravityY, double gravityZ, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void DeleteModel(IntPtr model);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Reload(IntPtr model, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Update(IntPtr model, double[] pos, int posLen, double[] vel, int velLen, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetJacobian(IntPtr model, string linkName, double[] buffer, int rows, int cols, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetJacobianDot(IntPtr model, string linkName, double[] buffer, int rows, int cols, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetMassMatrix(IntPtr model, double[] buffer, int dof, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetCoriolisCentripetalMatrix(IntPtr model, double[] buffer, int dof, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetGravityForceVector(IntPtr model, double[] buffer, int dof);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetCoriolisForceVector(IntPtr model, double[] buffer, int dof);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SyncURDF(IntPtr model, string templateUrdfPath, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void Reachable(IntPtr model, double[] pose, int poseLen, double[] seed, int seedLen,
+            int freeOri, ref int reachable, double[] ikSolution, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ConfigurationScore(IntPtr model, ref double transScore, ref double orientScore, ref FlexivError error);
+
     }
 }
