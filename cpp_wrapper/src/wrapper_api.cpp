@@ -17,13 +17,13 @@ EXPORT_API void SpdlogError(const char* msgs) {
 }
 
 EXPORT_API Robot* CreateFlexivRobot(const char* robot_sn,
-	const char** interfaces, int interface_count, int verbose, FlexivError* error) {
+	const char** interfaces, int interface_count, int verbose, int lite, FlexivError* error) {
 	std::vector<std::string> white_list;
 	for (int i = 0; i < interface_count; ++i) {
 		white_list.push_back(interfaces[i]);
 	}
 	try {
-		flexiv::rdk::Robot* robot = new flexiv::rdk::Robot(robot_sn, white_list, verbose);
+		flexiv::rdk::Robot* robot = new flexiv::rdk::Robot(robot_sn, white_list, verbose, lite);
 		error->error_code = 0;
 		return robot;
 	}
@@ -39,6 +39,10 @@ EXPORT_API void DeleteFlexivRobot(flexiv::rdk::Robot* robot) {
 }
 
 //========================================= ACCESSORS ==========================================
+EXPORT_API int IsLite(Robot* robot) {
+	return robot->lite();
+}
+
 EXPORT_API int IsConnected(Robot* robot) {
 	return robot->connected();
 }
@@ -60,6 +64,7 @@ EXPORT_API void GetInfo(Robot* robot, WRobotInfo* info) {
 		info->dq_max[i] = r_info.dq_max[i];
 		info->tau_max[i] = r_info.tau_max[i];
 	}
+	info->has_FT_sensor = r_info.has_FT_sensor;
 }
 
 EXPORT_API int GetMode(Robot* robot) {
@@ -83,6 +88,8 @@ EXPORT_API int GetMode(Robot* robot) {
 
 EXPORT_API void GetStates(Robot* robot, WRobotState* robot_state) {
 	const RobotStates& states = robot->states();
+	robot_state->sec = states.timestamp.first;
+	robot_state->nsec = states.timestamp.second;
 	for (int i = 0; i < kSerialJointDoF; ++i) {
 		robot_state->q[i] = states.q[i];
 		robot_state->theta[i] = states.theta[i];
@@ -92,6 +99,8 @@ EXPORT_API void GetStates(Robot* robot, WRobotState* robot_state) {
 		robot_state->tau_des[i] = states.tau_des[i];
 		robot_state->tau_dot[i] = states.tau_dot[i];
 		robot_state->tau_ext[i] = states.tau_ext[i];
+		robot_state->tau_interact[i] = states.tau_interact[i];
+		robot_state->temperature[i] = states.temperature[i];
 	}
 	for (int i = 0; i < kPoseSize; ++i) {
 		robot_state->tcp_pose[i] = states.tcp_pose[i];
@@ -281,6 +290,28 @@ EXPORT_API void LockExternalAxes(Robot* robot, int toggle, FlexivError* error) {
 	}
 }
 
+EXPORT_API void SyncWithPositioner(Robot* robot, int toggle, FlexivError* error) {
+	try {
+		robot->SyncWithPositioner(toggle);
+		error->error_code = 0;
+	} 
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void SetTimeLinessFailureLimit(Robot* robot, int limit, FlexivError* error) {
+	try {
+		robot->SetTimelinessFailureLimit(limit);
+		error->error_code = 0;
+	} 
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 //======================================= PLAN EXECUTION =======================================
 EXPORT_API void ExecutePlanByIdx(Robot* robot, int idx, int continueExec,
 	int blockUntilStarted, FlexivError* error) {
@@ -309,6 +340,17 @@ EXPORT_API void ExecutePlanByName(Robot* robot, const char* name, int continueEx
 EXPORT_API void PausePlan(Robot* robot, int pause, FlexivError* error) {
 	try {
 		robot->PausePlan(pause);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void StopPlan(Robot* robot, FlexivError* error) {
+	try {
+		robot->StopPlan();
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -435,15 +477,14 @@ EXPORT_API void StreamJointPosition(Robot* robot, const double* pos, int posLen,
 }
 
 EXPORT_API void SendJointPosition(Robot* robot, const double* pos, int posLen, const double* vel,
-	int velLen, const double* acc, int accLen, const double* maxVel, int maxVelLen,
+	int velLen, const double* maxVel, int maxVelLen,
 	const double* maxAcc, int maxAccLen, FlexivError* error) {
 	try {
 		std::vector<double> positions(pos, pos + posLen);
 		std::vector<double> velocities(vel, vel + velLen);
-		std::vector<double> accelerations(acc, acc + accLen);
 		std::vector<double> max_vel(maxVel, maxVel + maxVelLen);
 		std::vector<double> max_acc(maxAcc, maxAcc + maxAccLen);
-		robot->SendJointPosition(positions, velocities, accelerations,
+		robot->SendJointPosition(positions, velocities,
 			max_vel, max_acc);
 		error->error_code = 0;
 	}
@@ -459,6 +500,30 @@ EXPORT_API void SetJointImpedance(Robot* robot, const double* Kq, int KqLen,
 		std::vector<double> K_q(Kq, Kq + KqLen);
 		std::vector<double> Z_q(Zq, Zq + ZqLen);
 		robot->SetJointImpedance(K_q, Z_q);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void SetMaxContactTorque(Robot* robot, const double* maxTorques, int maxTorquesLen, FlexivError* error) {
+	try {
+		std::vector<double> maxTorquesArr(maxTorques, maxTorques + maxTorquesLen);
+		robot->SetMaxContactTorque(maxTorquesArr);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void SetJointInertiaScale(Robot* robot, const double* inertiaScales, int inertiaScalesLen, FlexivError* error) {
+	try {
+		std::vector<double> inertiaScalesArr(inertiaScales, inertiaScales + inertiaScalesLen);
+		robot->SetJointInertiaScale(inertiaScalesArr);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -501,7 +566,7 @@ EXPORT_API void StreamCartesianMotionForce(Robot* robot, const double* pose, int
 }
 
 EXPORT_API void SendCartesianMotionForce(Robot* robot, const double* pose, int poseLen,
-	const double* wrench, int wrenchLen, double maxLinearVel, double maxAngularVel,
+	const double* wrench, int wrenchLen, const double* vel, int velLen, double maxLinearVel, double maxAngularVel,
 	double maxLinearAcc, double maxAngularAcc, FlexivError* error) {
 	try {
 		if (poseLen != kPoseSize)
@@ -510,11 +575,16 @@ EXPORT_API void SendCartesianMotionForce(Robot* robot, const double* pose, int p
 		if (wrenchLen != kCartDoF)
 			throw std::invalid_argument("SendCartesianMotionForce wrench length must be " +
 				std::to_string(kCartDoF));
+		if (velLen != kCartDoF)
+			throw std::invalid_argument("SendCartesianMotionForce velocity length must be " +
+				std::to_string(kCartDoF));
 		std::array<double, kPoseSize> poseArr;
 		std::copy(pose, pose + kPoseSize, poseArr.begin());
 		std::array<double, kCartDoF> wrenchArr{};
 		std::copy(wrench, wrench + kCartDoF, wrenchArr.begin());
-		robot->SendCartesianMotionForce(poseArr, wrenchArr, maxLinearVel, maxAngularVel,
+		std::array<double, kCartDoF> velocityArr{};
+		std::copy(vel, vel + velLen, velocityArr.begin());
+		robot->SendCartesianMotionForce(poseArr, wrenchArr, velocityArr, maxLinearVel, maxAngularVel,
 			maxLinearAcc, maxAngularAcc);
 		error->error_code = 0;
 	}
@@ -1055,6 +1125,20 @@ EXPORT_API char* GetTrajFilesList(FileIO* fileIO, FlexivError* error) {
 	return nullptr;
 }
 
+EXPORT_API char* GetProjectsList(FileIO* fileIO, FlexivError* error) {
+	try {
+		json j = fileIO->projects_list();
+		std::string str = j.dump();
+		error->error_code = 0;
+		return CopyInputString(str.c_str());
+	} 
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
 EXPORT_API void UploadTrajFile(FileIO* fileIO, const char* fileDir, const char* fileName, FlexivError* error) {
 	try {
 		fileIO->UploadTrajFile(fileDir, fileName);
@@ -1082,6 +1166,28 @@ EXPORT_API char* DownloadTrajFile(FileIO* fileIO, const char* fileName, FlexivEr
 EXPORT_API void DownloadTrajFile2(FileIO* fileIO, const char* fileName, const char* saveDir, FlexivError* error) {
 	try {
 		fileIO->DownloadTrajFile(fileName, saveDir);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void UploadProject(FileIO* fileIO, const char* projectDir, FlexivError* error) {
+	try {
+		fileIO->UploadProject(projectDir);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void DownloadProject(FileIO* fileIO, const char* projectName, const char* saveDir, FlexivError* error) {
+	try {
+		fileIO->DownloadProject(projectName, saveDir);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
@@ -1334,6 +1440,20 @@ EXPORT_API void DeleteModel(Model* model) {
 	delete model;
 }
 
+EXPORT_API char* GetLinkNames(Model* model, FlexivError* error) {
+	try {
+		json j = model->link_names();
+		std::string str = j.dump();
+		error->error_code = 0;
+		return CopyInputString(str.c_str());
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return nullptr;
+}
+
 EXPORT_API void Reload(Model* model, FlexivError* error) {
 	try {
 		model->Reload();
@@ -1364,6 +1484,20 @@ EXPORT_API void GetJacobian(Model* model, const char* linkName, double* buffer, 
 		Eigen::MatrixXd J = model->J(std::string(linkName));
 		if (J.rows() != rows || J.cols() != cols) return;
 		std::memcpy(buffer, J.data(), sizeof(double) * rows * rows);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void GetTransformation(Model* model, const char* linkName, double* buffer, int rows, int cols, FlexivError* error) {
+	try {
+		if (!model || !buffer || !linkName) return;
+		Eigen::Isometry3d t = model->T(std::string(linkName));
+		if (t.rows() != rows || t.cols() != cols) return;
+		std::memcpy(buffer, t.data(), sizeof(double) * rows * rows);
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {

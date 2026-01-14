@@ -41,11 +41,16 @@ namespace FlexivRdk
             }
         }
 
-        public Robot(string robotSN, string[] networkInterfaceWhiteList = null, bool verbose = true)
+        public Robot(string robotSN, string[] networkInterfaceWhiteList = null, bool verbose = true, bool lite = false)
         {
             FlexivError error = new();
             string[] interfaces = networkInterfaceWhiteList ?? Array.Empty<string>();
-            _flexivRobotPtr = NativeFlexivRdk.CreateFlexivRobot(robotSN, interfaces, interfaces.Length, verbose ? 1 : 0, ref error);
+            _flexivRobotPtr = NativeFlexivRdk.CreateFlexivRobot(robotSN, 
+                                                                interfaces, 
+                                                                interfaces.Length, 
+                                                                verbose ? 1 : 0, 
+                                                                lite ? 1 : 0,
+                                                                ref error);
             _options = new JsonSerializerOptions
             {
                 WriteIndented = false,
@@ -58,6 +63,11 @@ namespace FlexivRdk
         ~Robot() => Dispose(false);
 
         //========================================= ACCESSORS ==========================================
+        public bool lite()
+        {
+            return NativeFlexivRdk.IsLite(_flexivRobotPtr) != 0;
+        }
+
         public bool connected()
         {
             return NativeFlexivRdk.IsConnected(_flexivRobotPtr) != 0;
@@ -212,6 +222,20 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
+        public void SyncWithPositioner(bool toggle)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.SyncWithPositioner(_flexivRobotPtr, toggle ? 1 : 0, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void SetTimelinessFailureLimit(int limit = 3)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.SetTimelinessFailureLimit(limit);
+            ThrowRdkException(error);
+        }
+
         //======================================= PLAN EXECUTION =======================================
         public void ExecutePlan(int index, bool continueExec = false, bool blockUntilStarted = true)
         {
@@ -231,6 +255,13 @@ namespace FlexivRdk
         {
             FlexivError error = new();
             NativeFlexivRdk.PausePlan(_flexivRobotPtr, pause ? 1 : 0, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void StopPlan()
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.StopPlan(_flexivRobotPtr, ref error);
             ThrowRdkException(error);
         }
 
@@ -318,12 +349,12 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void SendJointPosition(double[] positions, double[] velocities, double[] accelerations,
+        public void SendJointPosition(double[] positions, double[] velocities,
             double[] maxVel, double[] maxAcc)
         {
             FlexivError error = new();
             NativeFlexivRdk.SendJointPosition(_flexivRobotPtr, positions, positions.Length, velocities,
-                velocities.Length, accelerations, accelerations.Length, maxVel, maxVel.Length,
+                velocities.Length, maxVel, maxVel.Length,
                 maxAcc, maxAcc.Length, ref error);
             ThrowRdkException(error);
         }
@@ -333,6 +364,20 @@ namespace FlexivRdk
             FlexivError error = new();
             if (Zq == null) Zq = new double[] { 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7 };
             NativeFlexivRdk.SetJointImpedance(_flexivRobotPtr, Kq, Kq.Length, Zq, Zq.Length, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void SetMaxContactTorque(double[] maxTorques)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.SetNullSpacePosture(_flexivRobotPtr, refPositions, refPositions.Length, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void SetJointInertiaScale(double[] inertia_scales)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.SetJointInertiaScale(_flexivRobotPtr, inertia_scales, inertia_scales.Length, ref error);
             ThrowRdkException(error);
         }
 
@@ -348,13 +393,13 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void SendCartesianMotionForce(double[] pose, double[] wrench = null, double maxLinearVel = 0.5,
-            double maxAngularVel = 1.0, double maxLinearAcc = 2.0, double maxAngularAcc = 5.0)
+        public void SendCartesianMotionForce(double[] pose, double[] wrench = null, double[] velocity = null,
+            double maxLinearVel = 0.5, double maxAngularVel = 1.0, double maxLinearAcc = 2.0, double maxAngularAcc = 5.0)
         {
             FlexivError error = new();
             if (wrench == null) wrench = new double[] { 0, 0, 0, 0, 0, 0 };
             NativeFlexivRdk.SendCartesianMotionForce(_flexivRobotPtr, pose, pose.Length, wrench, wrench.Length,
-                maxLinearVel, maxAngularVel, maxLinearAcc, maxAngularAcc, ref error);
+                velocity, velocity.Length, maxLinearVel, maxAngularVel, maxLinearAcc, maxAngularAcc, ref error);
             ThrowRdkException(error);
         }
 

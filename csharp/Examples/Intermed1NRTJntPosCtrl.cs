@@ -120,7 +120,7 @@ Optional arguments:
                             targetPos[i] = initPos[i] + SWING_AMP * Math.Sin(2 * Math.PI * SWING_FREQ * loopTime);
                         }
                     }
-                    robot.SendJointPosition(targetPos, targetVel, targetAcc, maxVel, maxAcc);
+                    robot.SendJointPosition(targetPos, targetVel, maxVel, maxAcc);
                     loopTime += period;
                 }
             }

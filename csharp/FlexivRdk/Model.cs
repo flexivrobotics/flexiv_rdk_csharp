@@ -43,6 +43,17 @@ namespace FlexivRdk
 
         ~Model() => Dispose(false);
 
+        public List<string> link_names() 
+        {
+            FlexivError error = new();
+            IntPtr ptr = NativeFlexivRdk.GetLinkNames(_fileIOPtr, ref error);
+            ThrowRdkException(error);
+            string str = Marshal.PtrToStringAnsi(ptr);
+            NativeFlexivRdk.FreeString(ptr);
+            List<string> ret = JsonSerializer.Deserialize<List<string>>(str);
+            return new List<string>(ret);
+        }
+
         public void Reload()
         {
             FlexivError error = new();
@@ -64,6 +75,21 @@ namespace FlexivRdk
             int cols = 7;
             var buffer = new double[rows * cols];
             NativeFlexivRdk.GetJacobian(_modelPtr, linkName, buffer, rows, cols, ref error);
+            ThrowRdkException(error);
+            var result = new double[rows, cols];
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < cols; ++j)
+                    result[i, j] = buffer[i * cols + j];
+            return result;
+        }
+
+        public double[,] T(string linkName)
+        {
+            FlexivError error = new();
+            int rows = 4;
+            int cols = 4;
+            var buffer = new double[rows * cols];
+            NativeFlexivRdk.GetTransformation(_modelPtr, linkName, buffer, rows, cols, ref error);
             ThrowRdkException(error);
             var result = new double[rows, cols];
             for (int i = 0; i < rows; ++i)

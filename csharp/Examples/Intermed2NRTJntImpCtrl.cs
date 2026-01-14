@@ -136,7 +136,7 @@ Optional arguments:
                         Utility.SpdlogInfo("Joint stiffness reset to nominal.");
                     }
                     // Send commands
-                    robot.SendJointPosition(targetPos, targetVel, targetAcc, maxVel, maxAcc);
+                    robot.SendJointPosition(targetPos, targetVel, maxVel, maxAcc);
                     // Increment loop counter
                     loopCounter += 1;
                 }

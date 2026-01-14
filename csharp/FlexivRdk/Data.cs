@@ -386,6 +386,8 @@ namespace FlexivRdk
     [StructLayout(LayoutKind.Sequential)]
     public struct RobotStates
     {
+        public long sec; // seconds since epoch 
+        public int nsec; // nanoseconds
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] Q;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
@@ -402,6 +404,10 @@ namespace FlexivRdk
         public double[] TauDot;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] TauExt;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
+        public double[] tau_interact;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
+        public double[] temperature;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
         public double[] TcpPose;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kCartDoF)]
@@ -422,6 +428,9 @@ namespace FlexivRdk
         public override string ToString()
         {
             var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"Timestamp:");
+            sb.AppendLine($"  sec : {sec}");
+            sb.AppendLine($"  nsec: {nsec}");
             void AppendArray(string name, double[] arr, int decimals = 5)
             {
                 if (arr == null || arr.Length == 0)
@@ -441,6 +450,8 @@ namespace FlexivRdk
             AppendArray(nameof(TauDes), TauDes);
             AppendArray(nameof(TauDot), TauDot);
             AppendArray(nameof(TauExt), TauExt);
+            AppendArray(nameof(tau_interact), tau_interact);
+            AppendArray(nameof(temperature), temperature);
             AppendArray(nameof(TcpPose), TcpPose);
             AppendArray(nameof(TcpVel), TcpVel);
             AppendArray(nameof(FlangePose), FlangePose);
@@ -508,6 +519,7 @@ namespace FlexivRdk
         public double[] DqMax;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] TauMax;
+        public int has_FT_sensor;
 
         public override string ToString()
         {
@@ -530,6 +542,7 @@ namespace FlexivRdk
             sb.AppendLine($"QMax: {FormatArray(QMax)}");
             sb.AppendLine($"DqMax: {FormatArray(DqMax)}");
             sb.AppendLine($"TauMax: {FormatArray(TauMax)}");
+            sb.AppendLine($"has_FT_sensor: {has_FT_sensor}");
             return sb.ToString();
         }
     }
