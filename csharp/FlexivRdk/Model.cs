@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace FlexivRdk
 {
@@ -43,10 +46,10 @@ namespace FlexivRdk
 
         ~Model() => Dispose(false);
 
-        public List<string> link_names() 
+        public List<string> link_names()
         {
             FlexivError error = new();
-            IntPtr ptr = NativeFlexivRdk.GetLinkNames(_fileIOPtr, ref error);
+            IntPtr ptr = NativeFlexivRdk.GetLinkNames(_modelPtr, ref error);
             ThrowRdkException(error);
             string str = Marshal.PtrToStringAnsi(ptr);
             NativeFlexivRdk.FreeString(ptr);
@@ -86,7 +89,7 @@ namespace FlexivRdk
         public double[,] T(string linkName)
         {
             FlexivError error = new();
-            int rows = 4;
+            int rows = 3;
             int cols = 4;
             var buffer = new double[rows * cols];
             NativeFlexivRdk.GetTransformation(_modelPtr, linkName, buffer, rows, cols, ref error);

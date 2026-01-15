@@ -63,7 +63,7 @@ Optional arguments:
             try
             {
                 // Instantiate robot interface
-                var robot = new Robot(robotSN);
+                using var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
                 if (robot.fault())
                 {
@@ -101,8 +101,9 @@ Optional arguments:
                 // WARNING: during the process, the robot must not contact anything, otherwise the result
                 // will be inaccurate and affect following operations
                 Utility.SpdlogWarn("Zeroing force/torque sensors, make sure nothing is in contact with the robot");
-                // Wait for primitive completion
-                while (robot.busy())
+                // Wait for the primitive completion
+                while (!(FlexivDataTypesUtils.TryGet<int>(robot.primitive_states(),
+                    "terminated", out var flag) && flag == 1))
                 {
                     Thread.Sleep(1000);
                 }
@@ -219,7 +220,7 @@ Optional arguments:
             }
             catch (Exception ex)
             {
-                Utility.SpdlogError(ex.Message);
+                Utility.SpdlogError($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
     }

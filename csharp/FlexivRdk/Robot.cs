@@ -45,10 +45,10 @@ namespace FlexivRdk
         {
             FlexivError error = new();
             string[] interfaces = networkInterfaceWhiteList ?? Array.Empty<string>();
-            _flexivRobotPtr = NativeFlexivRdk.CreateFlexivRobot(robotSN, 
-                                                                interfaces, 
-                                                                interfaces.Length, 
-                                                                verbose ? 1 : 0, 
+            _flexivRobotPtr = NativeFlexivRdk.CreateFlexivRobot(robotSN,
+                                                                interfaces,
+                                                                interfaces.Length,
+                                                                verbose ? 1 : 0,
                                                                 lite ? 1 : 0,
                                                                 ref error);
             _options = new JsonSerializerOptions
@@ -232,7 +232,7 @@ namespace FlexivRdk
         public void SetTimelinessFailureLimit(int limit = 3)
         {
             FlexivError error = new();
-            NativeFlexivRdk.SetTimelinessFailureLimit(limit);
+            NativeFlexivRdk.SetTimelinessFailureLimit(_flexivRobotPtr, limit);
             ThrowRdkException(error);
         }
 
@@ -370,7 +370,7 @@ namespace FlexivRdk
         public void SetMaxContactTorque(double[] maxTorques)
         {
             FlexivError error = new();
-            NativeFlexivRdk.SetNullSpacePosture(_flexivRobotPtr, refPositions, refPositions.Length, ref error);
+            NativeFlexivRdk.SetNullSpacePosture(_flexivRobotPtr, maxTorques, maxTorques.Length, ref error);
             ThrowRdkException(error);
         }
 
@@ -398,6 +398,7 @@ namespace FlexivRdk
         {
             FlexivError error = new();
             if (wrench == null) wrench = new double[] { 0, 0, 0, 0, 0, 0 };
+            if (velocity == null) velocity = new double[6];
             NativeFlexivRdk.SendCartesianMotionForce(_flexivRobotPtr, pose, pose.Length, wrench, wrench.Length,
                 velocity, velocity.Length, maxLinearVel, maxAngularVel, maxLinearAcc, maxAngularAcc, ref error);
             ThrowRdkException(error);

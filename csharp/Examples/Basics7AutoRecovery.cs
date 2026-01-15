@@ -35,7 +35,7 @@ Optional arguments:
             try
             {
                 // Instantiate robot interface
-                var robot = new Robot(robotSN);
+                using var robot = new Robot(robotSN);
                 // Enable the robot, make sure the E-stop is released before enabling
                 Utility.SpdlogInfo("Enabling robot ...");
                 robot.Enable();

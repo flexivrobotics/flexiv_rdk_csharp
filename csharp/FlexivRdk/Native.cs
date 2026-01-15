@@ -105,7 +105,7 @@ namespace FlexivRdk
         public static extern void SyncWithPositioner(IntPtr robot, int toggle, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SetTimelinessFailureLimit(IntPtr robot, int limit, ref FlexivError error);
+        public static extern void SetTimelinessFailureLimit(IntPtr robot, int limit);
 
         //======================================= PLAN EXECUTION =======================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -168,7 +168,7 @@ namespace FlexivRdk
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetJointInertiaScale(IntPtr robot, double[] inertiaScales, int inertiaScalesLen, ref FlexivError error);
-            
+
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void StreamCartesianMotionForce(IntPtr robot, double[] pos, int posLen,
             double[] wrench, int wrenchLen, double[] vel, int velLen, double[] acc, int accLen, ref FlexivError error);

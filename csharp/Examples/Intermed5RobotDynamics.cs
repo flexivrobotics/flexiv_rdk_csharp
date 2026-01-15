@@ -33,7 +33,7 @@ Optional arguments:
             try
             {
                 // Instantiate robot interface
-                var robot = new Robot(robotSN);
+                using var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
                 if (robot.fault())
                 {
@@ -68,7 +68,19 @@ Optional arguments:
 
                 // Robot Dynamics
                 // Initialize dynamics engine
-                Model model = new Model(robot);
+                using Model model = new Model(robot);
+                // Update robot model in dynamics engine
+                model.Update(robot.states().Q, robot.states().DTheta);
+                var link_names = model.link_names();
+                Console.WriteLine("link_names = ");
+                for (int i = 0; i < link_names.Count; i++)
+                {
+                    Console.WriteLine($"[{i}] {link_names[i]}");
+                    model.Update(robot.states().Q, robot.states().DTheta);
+                    var t = model.T(link_names[i]);
+                    Console.WriteLine("T = ");
+                    PrintMatrix(t);
+                }
                 for (int i = 0; i < 5; ++i)
                 {
                     // Mark timer start point

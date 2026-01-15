@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Examples;
 
 namespace FlexivRdkCSharp
@@ -44,7 +45,12 @@ namespace FlexivRdkCSharp
                 Console.WriteLine($"Unknown example: {selected}");
                 return;
             }
-            example.Run(args[1..]);
+            var thread = new Thread(
+                () => example.Run(args[1..]) , 
+                16 * 1024 * 1024 // 16MB stack size
+            ); 
+            thread.Start();
+            thread.Join();
         }
     }
 }
