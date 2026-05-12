@@ -77,7 +77,7 @@ Optional arguments:
             try
             {
                 // Instantiate robot interface
-                var robot = new Robot(robotSN);
+                using var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
                 if (robot.fault())
                 {
@@ -142,7 +142,7 @@ Optional arguments:
                 targetPose[2] -= SEARCH_DISTANCE;
                 // Send target point to robot to start searching for contact and limit the velocity. Keep
                 // target wrench 0 at this stage since we are not doing force control yet
-                robot.SendCartesianMotionForce(targetPose, new double[] { 0, 0, 0, 0, 0, 0 }, SEARCH_VELOCITY);
+                robot.SendCartesianMotionForce(targetPose, new double[] { 0, 0, 0, 0, 0, 0 }, new double[] { 0, 0, 0, 0, 0, 0 }, SEARCH_VELOCITY);
                 // Use a while loop to poll robot states and check if a contact is made
                 bool IsContacted = false;
                 while (!IsContacted)

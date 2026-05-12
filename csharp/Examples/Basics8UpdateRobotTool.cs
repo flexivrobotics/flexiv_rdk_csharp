@@ -34,7 +34,7 @@ Optional arguments:
             try
             {
                 // Instantiate robot interface
-                var robot = new Robot(robotSN);
+                using var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
                 if (robot.fault())
                 {
@@ -59,7 +59,7 @@ Optional arguments:
                 // Update Robot Tool, make sure the robot is in IDLE mode
                 robot.SwitchMode(RobotMode.IDLE);
                 // Instantiate tool interface
-                var tool = new Tool(robot);
+                using var tool = new Tool(robot);
                 // Get and print a list of already configured tools currently in the robot's tools pool
                 Utility.SpdlogInfo("All configured tools:");
                 var toolList = tool.list();

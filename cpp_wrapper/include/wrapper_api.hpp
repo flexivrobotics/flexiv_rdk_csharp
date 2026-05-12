@@ -47,9 +47,12 @@ struct WRobotInfo {
 	double q_max[kSerialJointDoF];
 	double dq_max[kSerialJointDoF];
 	double tau_max[kSerialJointDoF];
+	int has_FT_sensor;
 };
 
 struct WRobotState {
+	int64_t sec;
+	int32_t nsec;
 	double q[kSerialJointDoF];
 	double theta[kSerialJointDoF];
 	double dq[kSerialJointDoF];
@@ -58,6 +61,8 @@ struct WRobotState {
 	double tau_des[kSerialJointDoF];
 	double tau_dot[kSerialJointDoF];
 	double tau_ext[kSerialJointDoF];
+	double tau_interact[kSerialJointDoF];
+	double temperature[kSerialJointDoF];
 	double tcp_pose[kPoseSize];
 	double tcp_vel[kCartDoF];
 	double flange_pose[kPoseSize];

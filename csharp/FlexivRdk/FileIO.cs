@@ -57,6 +57,17 @@ namespace FlexivRdk
             return new List<string>(ret);
         }
 
+        public List<string> projects_list() 
+        {
+            FlexivError error = new();
+            IntPtr ptr = NativeFlexivRdk.GetProjectsList(_fileIOPtr, ref error);
+            ThrowRdkException(error);
+            string str = Marshal.PtrToStringAnsi(ptr);
+            NativeFlexivRdk.FreeString(ptr);
+            List<string> ret = JsonSerializer.Deserialize<List<string>>(str);
+            return new List<string>(ret);
+        }
+
         public void UploadTrajFile(string fileDir, string fileName)
         {
             FlexivError error = new();
@@ -78,6 +89,20 @@ namespace FlexivRdk
         {
             FlexivError error = new();
             NativeFlexivRdk.DownloadTrajFile2(_fileIOPtr, fileName, saveDir, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void UploadProject(string projectDir)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.UploadProject(_fileIOPtr, projectDir, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void DownloadProject(string projectName, string saveDir)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.DownloadProject(_fileIOPtr, projectName, saveDir, ref error);
             ThrowRdkException(error);
         }
     }

@@ -43,7 +43,7 @@ Optional arguments:
             try
             {
                 // Instantiate robot interface
-                var robot = new Robot(robotSN);
+                using var robot = new Robot(robotSN);
                 // Clear fault on the connected robot if any
                 if (robot.fault())
                 {
@@ -136,7 +136,7 @@ Optional arguments:
                         Utility.SpdlogInfo("Joint stiffness reset to nominal.");
                     }
                     // Send commands
-                    robot.SendJointPosition(targetPos, targetVel, targetAcc, maxVel, maxAcc);
+                    robot.SendJointPosition(targetPos, targetVel, maxVel, maxAcc);
                     // Increment loop counter
                     loopCounter += 1;
                 }
