@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(FlexivRdkCSharp LANGUAGES C CXX)
+project(FlexivRdkCSharp VERSION 1.8.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
