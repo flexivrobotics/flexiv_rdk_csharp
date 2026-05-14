@@ -165,7 +165,7 @@ EXPORT_API int ReachedTimelinessFailureLimit(Robot* robot) {
 	return robot->reached_timeliness_failure_limit();
 }
 
-EXPORT_API int IsEnablingButtonReleased(Robot* robot) {
+EXPORT_API int EnablingButtonReleased(Robot* robot) {
 	return robot->enabling_button_pressed();
 }
 
@@ -304,7 +304,7 @@ EXPORT_API void SyncWithPositioner(Robot* robot, int toggle, FlexivError* error)
 	}
 }
 
-EXPORT_API void SetTimeLinessFailureLimit(Robot* robot, double limit, FlexivError* error) {
+EXPORT_API void SetTimelinessFailureLimit(Robot* robot, double limit, FlexivError* error) {
 	try {
 		robot->SetTimelinessFailureLimit(limit);
 		error->error_code = 0;
@@ -414,6 +414,16 @@ EXPORT_API void StepBreakpoint(Robot* robot, FlexivError* error) {
 		error->error_code = 0;
 	}
 	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
+EXPORT_API void SetVelocityScale(Robot* robot, int velocityScale, FlexivError* error) {
+	try {
+		robot->SetVelocityScale(velocityScale);
+		error->error_code = 0;
+	} catch (const std::exception& e) {
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
 	}

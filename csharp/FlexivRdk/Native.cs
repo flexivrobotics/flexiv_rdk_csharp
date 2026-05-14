@@ -71,7 +71,7 @@ namespace FlexivRdk
         public static extern int ReachedTimelinessFailureLimit(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int IsEnablingButtonReleased(IntPtr robot);
+        public static extern int EnablingButtonReleased(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetEventLog(IntPtr robot);
@@ -108,7 +108,7 @@ namespace FlexivRdk
         public static extern void SyncWithPositioner(IntPtr robot, int toggle, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SetTimelinessFailureLimit(IntPtr robot, double limit);
+        public static extern void SetTimelinessFailureLimit(IntPtr robot, double limit, ref FlexivError error);
 
         //======================================= PLAN EXECUTION =======================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
@@ -376,7 +376,7 @@ namespace FlexivRdk
         public static extern void DeleteMaintenance(IntPtr maintenance);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void CalibrateJointTorqueSensor(IntPtr maintenance,
+        public static extern void CalibrateJointTorqueSensors(IntPtr maintenance,
             double[] caliPosture, int caliPostureLen, ref FlexivError error);
 
         //========================================= SAFETY ============================================

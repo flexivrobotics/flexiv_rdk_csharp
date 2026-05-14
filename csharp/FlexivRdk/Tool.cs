@@ -76,9 +76,7 @@ namespace FlexivRdk
             IntPtr ptr = NativeFlexivRdk.GetToolNames(_toolPtr, ref error);
             ThrowRdkException(error);
             string str = Marshal.PtrToStringAnsi(ptr);
-
-
-
+            NativeFlexivRdk.FreeString(ptr);
             var tmp = JsonSerializer.Deserialize<Dictionary<string, FlexivDataTypes>>(str, _options);
             string json = JsonSerializer.Serialize(tmp, _options);
             var ret = (List<string>)tmp["tool_list"];

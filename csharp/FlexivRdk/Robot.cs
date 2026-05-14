@@ -139,7 +139,7 @@ namespace FlexivRdk
 
         public bool enabling_button_pressed()
         {
-            return NativeFlexivRdk.IsEnablingButtonReleased(_flexivRobotPtr) != 0;
+            return NativeFlexivRdk.EnablingButtonReleased(_flexivRobotPtr) != 0;
         }
 
         public List<RobotEvent> event_log()
@@ -237,7 +237,7 @@ namespace FlexivRdk
         public void SetTimelinessFailureLimit(double limit = 2.0)
         {
             FlexivError error = new();
-            NativeFlexivRdk.SetTimelinessFailureLimit(_flexivRobotPtr, limit);
+            NativeFlexivRdk.SetTimelinessFailureLimit(_flexivRobotPtr, limit, ref error);
             ThrowRdkException(error);
         }
 
@@ -375,7 +375,7 @@ namespace FlexivRdk
         public void SetMaxContactTorque(double[] maxTorques)
         {
             FlexivError error = new();
-            NativeFlexivRdk.SetNullSpacePosture(_flexivRobotPtr, maxTorques, maxTorques.Length, ref error);
+            NativeFlexivRdk.SetMaxContactTorque(_flexivRobotPtr, maxTorques, maxTorques.Length, ref error);
             ThrowRdkException(error);
         }
 

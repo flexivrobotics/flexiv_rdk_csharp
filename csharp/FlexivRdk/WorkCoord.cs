@@ -26,7 +26,7 @@ namespace FlexivRdk
             }
             if (_workCoordPtr != IntPtr.Zero)
             {
-                NativeFlexivRdk.DeleteTool(_workCoordPtr);
+                NativeFlexivRdk.DeleteWorkCoord(_workCoordPtr);
                 _workCoordPtr = IntPtr.Zero;
             }
             _disposed = true;
