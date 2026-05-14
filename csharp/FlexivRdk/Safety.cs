@@ -102,5 +102,12 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
+        public void SetJointOutputTorqueRegulator(double limitingFactor = 1.3, int errorThreshold = 50)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.SetJointOutputTorqueRegulator(_safetyPtr,
+                limitingFactor, errorThreshold, ref error);
+            ThrowRdkException(error);
+        }
     }
 }

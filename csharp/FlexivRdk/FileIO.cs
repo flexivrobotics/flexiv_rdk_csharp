@@ -105,5 +105,12 @@ namespace FlexivRdk
             NativeFlexivRdk.DownloadProject(_fileIOPtr, projectName, saveDir, ref error);
             ThrowRdkException(error);
         }
+
+        public void DownloadCollisionMesh(string saveDir)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.DownloadCollisionMesh(_fileIOPtr, saveDir, ref error);
+            ThrowRdkException(error);
+        }
     }
 }

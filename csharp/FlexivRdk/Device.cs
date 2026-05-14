@@ -57,22 +57,37 @@ namespace FlexivRdk
 
         ~Device() => Dispose(false);
 
-        public Dictionary<string, bool> list()
+        public List<string> list()
         {
             FlexivError error = new();
-            IntPtr ptr = NativeFlexivRdk.GetDevicesList(_devicePtr, ref error);
+            IntPtr ptr = NativeFlexivRdk.GetDeviceList(_devicePtr, ref error);
             ThrowRdkException(error);
-            NativeFlexivRdk.FreeString(ptr);
             string str = Marshal.PtrToStringAnsi(ptr);
-            var tmp = JsonSerializer.Deserialize<Dictionary<string, bool>>(str);
-            if (tmp == null) tmp = new Dictionary<string, bool>();
-            return new Dictionary<string, bool>(tmp);
+            NativeFlexivRdk.FreeString(ptr);
+            List<string> ret = JsonSerializer.Deserialize<List<string>>(str);
+            return new List<string>(ret);
         }
 
         public bool exist(string deviceName)
         {
             FlexivError error = new();
             int flag = NativeFlexivRdk.HasDevice(_devicePtr, deviceName, ref error);
+            ThrowRdkException(error);
+            return flag != 0;
+        }
+
+        public bool enabled(string deviceName)
+        {
+            FlexivError error = new();
+            int flag = NativeFlexivRdk.DeviceEnabled(_devicePtr, deviceName, ref error);
+            ThrowRdkException(error);
+            return flag != 0;
+        }
+
+        public bool connected(string deviceName)
+        {
+            FlexivError error = new();
+            int flag = NativeFlexivRdk.DeviceConnected(_devicePtr, deviceName, ref error);
             ThrowRdkException(error);
             return flag != 0;
         }

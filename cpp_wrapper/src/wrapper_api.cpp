@@ -81,7 +81,6 @@ EXPORT_API int GetMode(Robot* robot) {
 	case Mode::RT_CARTESIAN_MOTION_FORCE:  return 9;
 	case Mode::NRT_CARTESIAN_MOTION_FORCE: return 10;
 	case Mode::NRT_SUPER_PRIMITIVE:        return 11;
-	case Mode::MODES_CNT:                  return 12;
 	default:                               return 0;
 	}
 }
@@ -162,6 +161,10 @@ EXPORT_API int IsEstopReleased(Robot* robot) {
 	return robot->estop_released();
 }
 
+EXPORT_API int ReachedTimelinessFailureLimit(Robot* robot) {
+	return robot->reached_timeliness_failure_limit();
+}
+
 EXPORT_API int IsEnablingButtonReleased(Robot* robot) {
 	return robot->enabling_button_pressed();
 }
@@ -196,11 +199,11 @@ EXPORT_API void Brake(Robot* robot, int engage, FlexivError* error) {
 }
 
 EXPORT_API void SwitchMode(Robot* robot, int mode, FlexivError* error) {
-	static const std::array<flexiv::rdk::Mode, 13> modeMap = {
+	static const std::array<flexiv::rdk::Mode, 12> modeMap = {
 	Mode::UNKNOWN, Mode::IDLE, Mode::RT_JOINT_TORQUE, Mode::RT_JOINT_IMPEDANCE,
 	Mode::NRT_JOINT_IMPEDANCE, Mode::RT_JOINT_POSITION, Mode::NRT_JOINT_POSITION,
 	Mode::NRT_PLAN_EXECUTION, Mode::NRT_PRIMITIVE_EXECUTION, Mode::RT_CARTESIAN_MOTION_FORCE,
-	Mode::NRT_CARTESIAN_MOTION_FORCE, Mode::NRT_SUPER_PRIMITIVE, Mode::MODES_CNT };
+	Mode::NRT_CARTESIAN_MOTION_FORCE, Mode::NRT_SUPER_PRIMITIVE };
 	if (mode < 0 || mode >= static_cast<int>(modeMap.size())) {
 		error->error_code = 1;
 		CopyExceptionMsg(std::runtime_error("Invalid robot mode index"), error);
@@ -301,7 +304,7 @@ EXPORT_API void SyncWithPositioner(Robot* robot, int toggle, FlexivError* error)
 	}
 }
 
-EXPORT_API void SetTimeLinessFailureLimit(Robot* robot, int limit, FlexivError* error) {
+EXPORT_API void SetTimeLinessFailureLimit(Robot* robot, double limit, FlexivError* error) {
 	try {
 		robot->SetTimelinessFailureLimit(limit);
 		error->error_code = 0;
@@ -1196,6 +1199,17 @@ EXPORT_API void DownloadProject(FileIO* fileIO, const char* projectName, const c
 	}
 }
 
+EXPORT_API void DownloadCollisionMesh(FileIO* fileIO, const char* saveDir, FlexivError* error) {
+	try {
+		fileIO->DownloadCollisionMesh(saveDir);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 //========================================= DEVICE ===========================================
 EXPORT_API Device* CreateDevice(Robot* robot, FlexivError* error) {
 	try {
@@ -1214,22 +1228,49 @@ EXPORT_API void DeleteDevice(Device* device) {
 	delete device;
 }
 
-EXPORT_API char* GetDevicesList(Device* device, FlexivError* error) {
+EXPORT_API char* GetDeviceList(Device* device, FlexivError* error) {
 	try {
-		const auto& devices_list = device->list();
-		std::string json_str = json(devices_list).dump();
-		return CopyInputString(json_str.c_str());
+		json j = device->list();
+		std::string str = j.dump();
+		error->error_code = 0;
+		return CopyInputString(str.c_str());
 	}
 	catch (const std::exception& e) {
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
-		return nullptr;
 	}
+	return nullptr;
 }
 
 EXPORT_API int HasDevice(Device* device, const char* name, FlexivError* error) {
 	try {
 		int flag = device->exist(name);
+		error->error_code = 0;
+		return flag;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return 0;
+	}
+}
+
+EXPORT_API int DeviceEnabled(Device* device, const char* name, FlexivError* error) {
+	try {
+		int flag = device->enabled(name);
+		error->error_code = 0;
+		return flag;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+		return 0;
+	}
+}
+
+EXPORT_API int DeviceConnected(Device* device, const char* name, FlexivError* error) {
+	try {
+		int flag = device->connected(name);
 		error->error_code = 0;
 		return flag;
 	}
@@ -1421,6 +1462,18 @@ EXPORT_API void SetJointVelocityReducedLimits(Safety* safetyPtr, double* maxVel,
 	}
 }
 
+EXPORT_API void SetJointOutputTorqueRegulator(Safety* safetyPtr, double limitingFactor,
+	int errorThreshold, FlexivError* error) {
+	try {
+		safetyPtr->SetJointOutputTorqueRegulator(limitingFactor, errorThreshold);
+		error->error_code = 0;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+}
+
 //========================================= MODEL ===========================================
 EXPORT_API Model* CreateModel(Robot* robot, double gravityX, double gravityY, 
 	double gravityZ, FlexivError* error) {
@@ -1569,6 +1622,19 @@ EXPORT_API void SyncURDF(Model* model, char* path, FlexivError* error) {
 		error->error_code = 1;
 		CopyExceptionMsg(e, error);
 	}
+}
+
+EXPORT_API int SyncKinematicsYAML(Model* model, char* path, FlexivError* error) {
+	try {
+		int ret = model->SyncKinematicsYAML(std::string(path));
+		error->error_code = 0;
+		return ret;
+	}
+	catch (const std::exception& e) {
+		error->error_code = 1;
+		CopyExceptionMsg(e, error);
+	}
+	return 0;
 }
 
 EXPORT_API void Reachable(Model* model, double* pose, int poseLen, double* seed, int seedLen,

@@ -132,6 +132,11 @@ namespace FlexivRdk
             return NativeFlexivRdk.IsEstopReleased(_flexivRobotPtr) != 0;
         }
 
+        public bool reached_timeliness_failure_limit()
+        {
+            return NativeFlexivRdk.ReachedTimelinessFailureLimit(_flexivRobotPtr) != 0;
+        }
+
         public bool enabling_button_pressed()
         {
             return NativeFlexivRdk.IsEnablingButtonReleased(_flexivRobotPtr) != 0;
@@ -229,7 +234,7 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
-        public void SetTimelinessFailureLimit(int limit = 3)
+        public void SetTimelinessFailureLimit(double limit = 2.0)
         {
             FlexivError error = new();
             NativeFlexivRdk.SetTimelinessFailureLimit(_flexivRobotPtr, limit);
