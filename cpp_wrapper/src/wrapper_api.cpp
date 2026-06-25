@@ -736,7 +736,7 @@ EXPORT_API void SetDigitalOutput(Robot* robot, int idx, int value, FlexivError* 
 	}
 }
 
-EXPORT_API int GetDigitalOutput(Robot* robot, int idx) {
+EXPORT_API int GetDigitalInput(Robot* robot, int idx) {
 	return robot->digital_inputs()[idx];
 }
 
