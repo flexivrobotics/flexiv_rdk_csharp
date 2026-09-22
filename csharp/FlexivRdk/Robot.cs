@@ -338,11 +338,11 @@ namespace FlexivRdk
         }
 
         //==================================== DIRECT JOINT CONTROL ====================================
-        public void StreamJointTorque(double[] torques, bool enableGravityComp = true, bool enableSoftLimits = true)
+        public void StreamJointTorque(double[] torques, bool enableGravityComp = true, bool enableSoftLimits = true, double friction_comp_scale = 100.0)
         {
             FlexivError error = new();
             NativeFlexivRdk.StreamJointTorque(_flexivRobotPtr, torques, torques.Length,
-                enableGravityComp ? 1 : 0, enableSoftLimits ? 1 : 0, ref error);
+                enableGravityComp ? 1 : 0, enableSoftLimits ? 1 : 0, friction_comp_scale, ref error);
             ThrowRdkException(error);
         }
 

@@ -151,7 +151,7 @@ namespace FlexivRdk
         //==================================== DIRECT JOINT CONTROL ====================================
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void StreamJointTorque(IntPtr robot, double[] torques, int torquesLen,
-            int enableGravityComp, int enableSoftLimits, ref FlexivError error);
+            int enableGravityComp, int enableSoftLimits, double frictionCompScale, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void StreamJointPosition(IntPtr robot, double[] pos, int posLen,
