@@ -462,10 +462,10 @@ EXPORT_API char* GetPrimitiveStates(Robot* robot, FlexivError* error) {
 
 //==================================== DIRECT JOINT CONTROL ====================================
 EXPORT_API void StreamJointTorque(Robot* robot, const double* pos, int posLen,
-	int enableGravityComp, int enableSoftLimits, FlexivError* error) {
+	int enableGravityComp, int enableSoftLimits, double frictionCompScale, FlexivError* error) {
 	try {
 		std::vector<double> positions(pos, pos + posLen);
-		robot->StreamJointTorque(positions, enableGravityComp, enableSoftLimits);
+		robot->StreamJointTorque(positions, enableGravityComp, enableSoftLimits, frictionCompScale);
 		error->error_code = 0;
 	}
 	catch (std::exception& e) {
