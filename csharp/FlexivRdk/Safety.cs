@@ -16,7 +16,7 @@ namespace FlexivRdk
         public double[] DQMaxReduced;
     }
 
-    class Safety : IDisposable
+    public class Safety : IDisposable
     {
         private IntPtr _safetyPtr;
         private bool _disposed = false;
@@ -57,14 +57,14 @@ namespace FlexivRdk
 
         ~Safety() => Dispose(false);
 
-        SafetyLimits default_limits()
+        public SafetyLimits default_limits()
         {
             SafetyLimits limits = new();
             NativeFlexivRdk.DefaultLimits(_safetyPtr, ref limits);
             return limits;
         }
 
-        SafetyLimits current_limits()
+        public SafetyLimits current_limits()
         {
             SafetyLimits limits = new();
             NativeFlexivRdk.CurrentLimits(_safetyPtr, ref limits);
@@ -102,5 +102,12 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
+        public void SetJointOutputTorqueRegulator(double limitingFactor = 1.3, int errorThreshold = 50)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.SetJointOutputTorqueRegulator(_safetyPtr,
+                limitingFactor, errorThreshold, ref error);
+            ThrowRdkException(error);
+        }
     }
 }

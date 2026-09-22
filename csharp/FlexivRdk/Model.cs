@@ -167,6 +167,14 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
+        public int SyncKinematicsYAML(string templateYamlPath)
+        {
+            FlexivError error = new();
+            int ret = NativeFlexivRdk.SyncKinematicsYAML(_modelPtr, templateYamlPath, ref error);
+            ThrowRdkException(error);
+            return ret;
+        }
+
         public (bool reachable, double[] ikSolution) reachable(double[] pose, double[] seed, bool freeOri)
         {
             FlexivError error = new();

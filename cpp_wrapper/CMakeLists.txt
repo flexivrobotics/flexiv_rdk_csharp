@@ -7,9 +7,19 @@ PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE flexiv::flexiv_rdk)
 
 if (MSVC)
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+    )
+
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "/NOIMPLIB /NOEXP"
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
+
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        /NOIMPLIB
+        /NOEXP
     )
 endif()
 

@@ -2,7 +2,7 @@
 
 namespace FlexivRdk
 {
-    class Maintenance : IDisposable
+    public class Maintenance : IDisposable
     {
         private IntPtr _maintenancePtr;
         private bool _disposed = false;
@@ -46,7 +46,7 @@ namespace FlexivRdk
         public void CalibrateJointTorqueSensors(double[] calibrationPosture = null)
         {
             FlexivError error = new();
-            NativeFlexivRdk.CalibrateJointTorqueSensor(_maintenancePtr, calibrationPosture,
+            NativeFlexivRdk.CalibrateJointTorqueSensors(_maintenancePtr, calibrationPosture,
                 calibrationPosture.Length, ref error);
             ThrowRdkException(error);
         }

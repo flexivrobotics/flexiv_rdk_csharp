@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-project(FlexivRdkCSharp VERSION 1.8.0)
+project(FlexivRdkCSharp VERSION 1.9.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/install/rdk_install")
-find_package(flexiv_rdk REQUIRED)
+find_package(flexiv_rdk 1.9.0 REQUIRED)
 
 include(GNUInstallDirs)
 

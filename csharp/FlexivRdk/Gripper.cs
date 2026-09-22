@@ -67,7 +67,7 @@ namespace FlexivRdk
             if (robot == null)
                 throw new ArgumentNullException(nameof(robot));
             FlexivError error = new();
-            _gripperPtr = NativeFlexivRdk.CreateTool(robot.NativePtr, ref error);
+            _gripperPtr = NativeFlexivRdk.CreateGripper(robot.NativePtr, ref error);
             _options = new JsonSerializerOptions
             {
                 WriteIndented = false,

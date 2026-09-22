@@ -21,7 +21,7 @@ namespace FlexivRdk
             if (_disposed) return;
             if (_fileIOPtr != IntPtr.Zero)
             {
-                NativeFlexivRdk.DeleteTool(_fileIOPtr);
+                NativeFlexivRdk.DeleteFileIO(_fileIOPtr);
                 _fileIOPtr = IntPtr.Zero;
             }
             _disposed = true;
@@ -42,6 +42,7 @@ namespace FlexivRdk
                 throw new ArgumentNullException(nameof(robot));
             FlexivError error = new();
             _fileIOPtr = NativeFlexivRdk.CreateFileIO(robot.NativePtr, ref error);
+            ThrowRdkException(error);
         }
 
         ~FileIO() => Dispose(false);
@@ -103,6 +104,13 @@ namespace FlexivRdk
         {
             FlexivError error = new();
             NativeFlexivRdk.DownloadProject(_fileIOPtr, projectName, saveDir, ref error);
+            ThrowRdkException(error);
+        }
+
+        public void DownloadCollisionMesh(string saveDir)
+        {
+            FlexivError error = new();
+            NativeFlexivRdk.DownloadCollisionMesh(_fileIOPtr, saveDir, ref error);
             ThrowRdkException(error);
         }
     }

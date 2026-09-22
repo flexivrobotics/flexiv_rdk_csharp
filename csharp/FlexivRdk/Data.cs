@@ -60,6 +60,40 @@ namespace FlexivRdk
         IN_AUTO_MODE = 11
     }
 
+    public static class OperationalStatusData
+    {
+        public static readonly string[] kOpStatusNames =
+        {
+            "Unknown status",
+            "Ready",
+            "System booting",
+            "E-Stop not released",
+            "Not enabled",
+            "Releasing brakes",
+            "Minor fault occurred",
+            "Critical fault occurred",
+            "In reduced state",
+            "In recovery state",
+            "In Manual mode",
+            "In regular Auto mode"
+        };
+
+        public static string GetOpStatusName(OperationalStatus status)
+        {
+            return GetOpStatusName((int)status);
+        }
+
+        public static string GetOpStatusName(int status)
+        {
+            if (status < 0 || status >= kOpStatusNames.Length)
+            {
+                return kOpStatusNames[(int)OperationalStatus.UNKNOWN];
+            }
+
+            return kOpStatusNames[status];
+        }
+    }
+
     public enum CoordType : int
     {
         WORLD = 0,
@@ -380,7 +414,6 @@ namespace FlexivRdk
         RT_CARTESIAN_MOTION_FORCE = 9,
         NRT_CARTESIAN_MOTION_FORCE = 10,
         NRT_SUPER_PRIMITIVE = 11,
-        MODES_CNT = 12
     }
 
     [StructLayout(LayoutKind.Sequential)]
