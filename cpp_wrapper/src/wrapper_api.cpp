@@ -85,34 +85,75 @@ EXPORT_API int GetMode(Robot* robot) {
 	}
 }
 
-EXPORT_API void GetStates(Robot* robot, WRobotState* robot_state) {
-	const RobotStates& states = robot->states();
-	robot_state->sec = states.timestamp.first;
-	robot_state->nsec = states.timestamp.second;
-	for (int i = 0; i < kSerialJointDoF; ++i) {
-		robot_state->q[i] = states.q[i];
-		robot_state->theta[i] = states.theta[i];
-		robot_state->dq[i] = states.dq[i];
-		robot_state->dtheta[i] = states.dtheta[i];
-		robot_state->tau[i] = states.tau[i];
-		robot_state->tau_des[i] = states.tau_des[i];
-		robot_state->tau_dot[i] = states.tau_dot[i];
-		robot_state->tau_ext[i] = states.tau_ext[i];
-		robot_state->tau_interact[i] = states.tau_interact[i];
-		robot_state->temperature[i] = states.temperature[i];
-	}
-	for (int i = 0; i < kPoseSize; ++i) {
-		robot_state->tcp_pose[i] = states.tcp_pose[i];
-		robot_state->flange_pose[i] = states.flange_pose[i];
-	}
-	for (int i = 0; i < kCartDoF; ++i) {
-		robot_state->tcp_vel[i] = states.tcp_vel[i];
-		robot_state->ft_sensor_raw[i] = states.ft_sensor_raw[i];
-		robot_state->ext_wrench_in_tcp[i] = states.ext_wrench_in_tcp[i];
-		robot_state->ext_wrench_in_world[i] = states.ext_wrench_in_world[i];
-		robot_state->ext_wrench_in_tcp_raw[i] = states.ext_wrench_in_tcp_raw[i];
-		robot_state->ext_wrench_in_world_raw[i] = states.ext_wrench_in_world_raw[i];
-	}
+EXPORT_API void GetStates(Robot* robot, WRobotState* robot_state, FlexivError* error) {
+    try {
+        const RobotStates& states = robot->states();
+        const auto system_dof = states.q.size();
+        if (system_dof > kMaxSystemDoF) {
+            throw std::runtime_error("RobotStates system DoF exceeds kMaxSystemDoF");
+        }
+        // All joint-space vectors should describe the same full system.
+        if (states.theta.size() != system_dof || states.dq.size() != system_dof || states.dtheta.size() != system_dof ||
+            states.tau.size() != system_dof || states.tau_dot.size() != system_dof || states.tau_ext.size() != system_dof ||
+            states.tau_interact.size() != system_dof || states.temperature.size() != system_dof) {
+            throw std::runtime_error("RobotStates joint-space vector sizes are inconsistent");
+        }
+
+        // Clear unused tail of fixed-size buffers.
+        *robot_state = WRobotState{};
+        robot_state->sec = states.timestamp.first;
+        robot_state->nsec = states.timestamp.second;
+        robot_state->system_dof = static_cast<int32_t>(system_dof);
+        std::copy(states.q.begin(), states.q.end(), robot_state->q);
+        std::copy(states.theta.begin(), states.theta.end(), robot_state->theta);
+        std::copy(states.dq.begin(), states.dq.end(), robot_state->dq);
+        std::copy(states.dtheta.begin(), states.dtheta.end(), robot_state->dtheta);
+        std::copy(states.tau.begin(), states.tau.end(), robot_state->tau);
+        std::copy(states.tau_dot.begin(), states.tau_dot.end(), robot_state->tau_dot);
+        std::copy(states.tau_ext.begin(), states.tau_ext.end(), robot_state->tau_ext);
+        std::copy(states.tau_interact.begin(), states.tau_interact.end(), robot_state->tau_interact);
+        std::copy(states.temperature.begin(), states.temperature.end(), robot_state->temperature);
+        std::copy(states.tcp_pose.begin(), states.tcp_pose.end(), robot_state->tcp_pose);
+        std::copy(states.tcp_vel.begin(), states.tcp_vel.end(), robot_state->tcp_vel);
+        std::copy(states.flange_pose.begin(), states.flange_pose.end(), robot_state->flange_pose);
+        std::copy(states.ft_sensor_raw.begin(), states.ft_sensor_raw.end(), robot_state->ft_sensor_raw);
+        std::copy(states.ext_wrench_in_tcp.begin(), states.ext_wrench_in_tcp.end(), robot_state->ext_wrench_in_tcp);
+        std::copy(states.ext_wrench_in_world.begin(), states.ext_wrench_in_world.end(), robot_state->ext_wrench_in_world);
+        std::copy(states.ext_wrench_in_tcp_raw.begin(), states.ext_wrench_in_tcp_raw.end(), robot_state->ext_wrench_in_tcp_raw);
+        std::copy(states.ext_wrench_in_world_raw.begin(), states.ext_wrench_in_world_raw.end(), robot_state->ext_wrench_in_world_raw);
+        error->error_code = 0;
+    }
+    catch (const std::exception& e) {
+        error->error_code = 1;
+        CopyExceptionMsg(e, error);
+    }
+}
+
+EXPORT_API void GetActions(Robot* robot, WRobotActions* robot_actions, FlexivError* error) {
+    try {
+        const RobotActions& actions = robot->actions();
+        const auto system_dof = actions.q_d.size();
+        if (system_dof > kMaxSystemDoF) {
+            throw std::runtime_error(
+                "RobotActions system DoF exceeds kMaxSystemDoF");
+        }
+        if (actions.dq_d.size() != system_dof || actions.tau_d.size() != system_dof) {
+            throw std::runtime_error("RobotActions joint-space vector sizes are inconsistent");
+        }
+        *robot_actions = WRobotActions{};
+        robot_actions->system_dof = static_cast<int32_t>(system_dof);
+        std::copy(actions.q_d.begin(), actions.q_d.end(), robot_actions->q_d);
+        std::copy(actions.dq_d.begin(), actions.dq_d.end(), robot_actions->dq_d);
+        std::copy(actions.tau_d.begin(), actions.tau_d.end(), robot_actions->tau_d);
+        std::copy(actions.tcp_pose_d.begin(), actions.tcp_pose_d.end(), robot_actions->tcp_pose_d);
+        std::copy(actions.tcp_vel_d.begin(), actions.tcp_vel_d.end(), robot_actions->tcp_vel_d);
+        std::copy(actions.ext_wrench_d.begin(), actions.ext_wrench_d.end(), robot_actions->ext_wrench_d);
+        error->error_code = 0;
+    }
+    catch (const std::exception& e) {
+        error->error_code = 1;
+        CopyExceptionMsg(e, error);
+    }
 }
 
 EXPORT_API int IsStopped(Robot* robot) {
