@@ -41,7 +41,10 @@ namespace FlexivRdk
         public static extern int GetMode(IntPtr robot);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void GetStates(IntPtr robot, ref RobotStates robot_state);
+        public static extern void GetStates(IntPtr robot, ref RobotStates robot_state, ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void GetActions(IntPtr robot, ref RobotActions robotActions, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int IsStopped(IntPtr robot);
