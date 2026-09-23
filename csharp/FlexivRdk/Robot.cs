@@ -88,19 +88,8 @@ namespace FlexivRdk
         public RobotStates states()
         {
             RobotStates robot_state = new();
-            FlexivError error = new();
-            NativeFlexivRdk.GetStates(_flexivRobotPtr, ref robot_state, ref error);
-            ThrowRdkException(error);
+            NativeFlexivRdk.GetStates(_flexivRobotPtr, ref robot_state);
             return robot_state;
-        }
-
-        public RobotActions actions()
-        {
-            RobotActions robotActions = new();
-            FlexivError error = new();
-            NativeFlexivRdk.GetActions(_flexivRobotPtr, ref robotActions, ref error);
-            ThrowRdkException(error);
-            return robotActions;
         }
 
         public bool stopped()

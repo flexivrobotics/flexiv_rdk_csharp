@@ -16,7 +16,6 @@ namespace FlexivRdk
         public const int kIOPorts = 18;
         public const int kMaxExtAxes = 6;
         public const int kSafetyIOPorts = 8;
-        public const int kMaxSystemDoF = 32;
     }
 
     public enum Level : int
@@ -422,30 +421,26 @@ namespace FlexivRdk
     {
         public long sec; // seconds since epoch 
         public int nsec; // nanoseconds
-        /// <summary>
-        /// Degrees of freedom of the full system,
-        /// including external axes and robot manipulator.
-        /// </summary>
-        public int SystemDoF;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] Q;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] Theta;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] DQ;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] DTheta;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] Tau;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
+        public double[] TauDes;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] TauDot;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
         public double[] TauExt;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
-        public double[] TauInteract;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
-        public double[] Temperature;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
+        public double[] tau_interact;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kSerialJointDoF)]
+        public double[] temperature;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
         public double[] TcpPose;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kCartDoF)]
@@ -469,27 +464,27 @@ namespace FlexivRdk
             sb.AppendLine($"Timestamp:");
             sb.AppendLine($"  sec : {sec}");
             sb.AppendLine($"  nsec: {nsec}");
-            void AppendArray(string name, double[] arr, int count = -1, int decimals = 5)
+            void AppendArray(string name, double[] arr, int decimals = 5)
             {
                 if (arr == null || arr.Length == 0)
                 {
                     sb.AppendLine($"{name}: <empty>");
                     return;
                 }
-                int validCount = count < 0 ? arr.Length : Math.Min(count, arr.Length);
                 string formatStr = $"F{decimals}";
-                var formattedValues = arr.Take(validCount).Select(v => v.ToString(formatStr));
+                var formattedValues = arr.Select(v => v.ToString(formatStr));
                 sb.AppendLine($"{name}: {string.Join(", ", formattedValues)}");
             }
-            AppendArray(nameof(Q), Q, SystemDoF);
-            AppendArray(nameof(Theta), Theta, SystemDoF);
-            AppendArray(nameof(DQ), DQ, SystemDoF);
-            AppendArray(nameof(DTheta), DTheta, SystemDoF);
-            AppendArray(nameof(Tau), Tau, SystemDoF);
-            AppendArray(nameof(TauDot), TauDot, SystemDoF);
-            AppendArray(nameof(TauExt), TauExt, SystemDoF);
-            AppendArray(nameof(TauInteract), TauInteract, SystemDoF);
-            AppendArray(nameof(Temperature), Temperature, SystemDoF);
+            AppendArray(nameof(Q), Q);
+            AppendArray(nameof(Theta), Theta);
+            AppendArray(nameof(DQ), DQ);
+            AppendArray(nameof(DTheta), DTheta);
+            AppendArray(nameof(Tau), Tau);
+            AppendArray(nameof(TauDes), TauDes);
+            AppendArray(nameof(TauDot), TauDot);
+            AppendArray(nameof(TauExt), TauExt);
+            AppendArray(nameof(tau_interact), tau_interact);
+            AppendArray(nameof(temperature), temperature);
             AppendArray(nameof(TcpPose), TcpPose);
             AppendArray(nameof(TcpVel), TcpVel);
             AppendArray(nameof(FlangePose), FlangePose);
@@ -500,30 +495,6 @@ namespace FlexivRdk
             AppendArray(nameof(ExtWrenchInWorldRaw), ExtWrenchInWorldRaw);
             return sb.ToString();
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct RobotActions
-    {
-        public int SystemDoF;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
-        public double[] Qd;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
-        public double[] Dqd;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kMaxSystemDoF)]
-        public double[] TauD;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kPoseSize)]
-        public double[] TcpPoseD;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kCartDoF)]
-        public double[] TcpVelD;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = FlexivConstants.kCartDoF)]
-        public double[] ExtWrenchD;
     }
 
     [StructLayout(LayoutKind.Sequential)]
