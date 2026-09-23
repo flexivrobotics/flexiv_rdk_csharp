@@ -393,6 +393,90 @@ namespace FlexivRdk
         }
     }
 
+    public class NrtCartesianCmd
+    {
+        /// <summary>
+        /// Target TCP pose in world frame:
+        /// [x, y, z, qw, qx, qy, qz].
+        /// </summary>
+        public double[] PoseD { get; }
+
+        /// <summary>
+        /// Target TCP wrench in force control frame:
+        /// [fx, fy, fz, mx, my, mz].
+        /// </summary>
+        public double[] WrenchD { get; }
+
+        /// <summary>
+        /// Target TCP twist in world frame:
+        /// [vx, vy, vz, wx, wy, wz].
+        /// </summary>
+        public double[] TwistD { get; }
+
+        /// <summary>
+        /// Maximum Cartesian linear velocity [m/s].
+        /// </summary>
+        public double MaxLinearVel { get; }
+
+        /// <summary>
+        /// Maximum Cartesian angular velocity [rad/s].
+        /// </summary>
+        public double MaxAngularVel { get; }
+
+        /// <summary>
+        /// Maximum Cartesian linear acceleration [m/s^2].
+        /// </summary>
+        public double MaxLinearAcc { get; }
+
+        /// <summary>
+        /// Maximum Cartesian angular acceleration [rad/s^2].
+        /// </summary>
+        public double MaxAngularAcc { get; }
+
+        public NrtCartesianCmd(
+            double[] poseD,
+            double[] wrenchD = null,
+            double[] twistD = null,
+            double maxLinearVel = 0.5,
+            double maxAngularVel = 1.0,
+            double maxLinearAcc = 2.0,
+            double maxAngularAcc = 5.0)
+        {
+            if (poseD == null || poseD.Length != FlexivConstants.kPoseSize)
+            {
+                throw new ArgumentException($"PoseD must have length {FlexivConstants.kPoseSize}.", nameof(poseD));
+            }
+
+            if (wrenchD != null && wrenchD.Length != FlexivConstants.kCartDoF)
+            {
+                throw new ArgumentException($"WrenchD must have length {FlexivConstants.kCartDoF}.", nameof(wrenchD));
+            }
+
+            if (twistD != null && twistD.Length != FlexivConstants.kCartDoF)
+            {
+                throw new ArgumentException($"TwistD must have length {FlexivConstants.kCartDoF}.", nameof(twistD));
+            }
+
+            if (maxLinearVel <= 0)
+                throw new ArgumentOutOfRangeException(nameof(maxLinearVel), "MaxLinearVel must be positive.");
+            if (maxAngularVel <= 0)
+                throw new ArgumentOutOfRangeException(nameof(maxAngularVel), "MaxAngularVel must be positive.");
+            if (maxLinearAcc <= 0)
+                throw new ArgumentOutOfRangeException(nameof(maxLinearAcc), "MaxLinearAcc must be positive.");
+            if (maxAngularAcc <= 0)
+                throw new ArgumentOutOfRangeException(nameof(maxAngularAcc), "MaxAngularAcc must be positive.");
+
+            PoseD = (double[])poseD.Clone();
+            WrenchD = wrenchD != null ? (double[])wrenchD.Clone() : new double[FlexivConstants.kCartDoF];
+            TwistD = twistD != null ? (double[])twistD.Clone() : new double[FlexivConstants.kCartDoF];
+
+            MaxLinearVel = maxLinearVel;
+            MaxAngularVel = maxAngularVel;
+            MaxLinearAcc = maxLinearAcc;
+            MaxAngularAcc = maxAngularAcc;
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct FlexivError
     {

@@ -420,6 +420,78 @@ namespace FlexivRdk
             ThrowRdkException(error);
         }
 
+        public void SendMultiCartesianMotionForce(IReadOnlyList<NrtCartesianCmd> cartCmds, IReadOnlyList<double[]> jointPos)
+        {
+            if (cartCmds == null || cartCmds.Count == 0)
+            {
+                throw new ArgumentException("cartCmds cannot be null or empty.", nameof(cartCmds));
+            }
+            if (jointPos == null || jointPos.Count == 0)
+            {
+                throw new ArgumentException("jointPos cannot be null or empty.", nameof(jointPos));
+            }
+            if (cartCmds.Count != jointPos.Count)
+            {
+                throw new ArgumentException("cartCmds and jointPos must contain the same number of waypoints.");
+            }
+            int waypointCount = cartCmds.Count;
+            // Official API requires each joint waypoint to contain RobotInfo::DoF values.
+            int systemDof = info().DoF;
+            for (int i = 0; i < waypointCount; ++i)
+            {
+                if (cartCmds[i] == null)
+                {
+                    throw new ArgumentException($"cartCmds[{i}] cannot be null.", nameof(cartCmds));
+                }
+                if (jointPos[i] == null)
+                {
+                    throw new ArgumentException($"jointPos[{i}] cannot be null.", nameof(jointPos));
+                }
+                if (jointPos[i].Length != systemDof)
+                {
+                    throw new ArgumentException(
+                        $"jointPos[{i}] must contain {systemDof} values, " +
+                        $"but contains {jointPos[i].Length}.",
+                        nameof(jointPos));
+                }
+            }
+
+            double[] poses = new double[waypointCount * FlexivConstants.kPoseSize];
+            double[] wrenches = new double[waypointCount * FlexivConstants.kCartDoF];
+            double[] twists = new double[waypointCount * FlexivConstants.kCartDoF];
+            double[] maxLinearVels = new double[waypointCount];
+            double[] maxAngularVels = new double[waypointCount];
+            double[] maxLinearAccs = new double[waypointCount];
+            double[] maxAngularAccs = new double[waypointCount];
+            double[] jointPosFlat = new double[waypointCount * systemDof];
+            for (int i = 0; i < waypointCount; ++i)
+            {
+                NrtCartesianCmd cmd = cartCmds[i];
+                Array.Copy(cmd.PoseD, 0, poses, i * FlexivConstants.kPoseSize, FlexivConstants.kPoseSize);
+                Array.Copy(cmd.WrenchD, 0, wrenches, i * FlexivConstants.kCartDoF, FlexivConstants.kCartDoF);
+                Array.Copy(cmd.TwistD, 0, twists, i * FlexivConstants.kCartDoF, FlexivConstants.kCartDoF);
+                maxLinearVels[i] = cmd.MaxLinearVel;
+                maxAngularVels[i] = cmd.MaxAngularVel;
+                maxLinearAccs[i] = cmd.MaxLinearAcc;
+                maxAngularAccs[i] = cmd.MaxAngularAcc;
+                Array.Copy(jointPos[i], 0, jointPosFlat, i * systemDof, systemDof);
+            }
+            FlexivError error = new();
+            NativeFlexivRdk.SendMultiCartesianMotionForce(
+                _flexivRobotPtr,
+                poses, poses.Length,
+                wrenches, wrenches.Length,
+                twists, twists.Length,
+                maxLinearVels, maxLinearVels.Length,
+                maxAngularVels, maxAngularVels.Length,
+                maxLinearAccs, maxLinearAccs.Length,
+                maxAngularAccs, maxAngularAccs.Length,
+                jointPosFlat, jointPosFlat.Length,
+                waypointCount,
+                ref error);
+            ThrowRdkException(error);
+        }
+
         public void SetCartesianImpedance(double[] Kx, double[] Zx = null)
         {
             FlexivError error = new();
