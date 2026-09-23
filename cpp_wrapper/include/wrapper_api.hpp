@@ -30,6 +30,8 @@
 using json = nlohmann::json;
 using namespace flexiv::rdk;
 
+constexpr int kMaxSystemDoF = 32;
+
 struct FlexivError {
 	int error_code;
 	char error_msg[512];
@@ -53,16 +55,19 @@ struct WRobotInfo {
 struct WRobotState {
 	int64_t sec;
 	int32_t nsec;
-	double q[kSerialJointDoF];
-	double theta[kSerialJointDoF];
-	double dq[kSerialJointDoF];
-	double dtheta[kSerialJointDoF];
-	double tau[kSerialJointDoF];
-	double tau_des[kSerialJointDoF];
-	double tau_dot[kSerialJointDoF];
-	double tau_ext[kSerialJointDoF];
-	double tau_interact[kSerialJointDoF];
-	double temperature[kSerialJointDoF];
+	// Actual DoF of the full system, external axes + robot manipulator.
+	int32_t system_dof;
+
+	double q[kMaxSystemDoF];
+	double theta[kMaxSystemDoF];
+	double dq[kMaxSystemDoF];
+	double dtheta[kMaxSystemDoF];
+	double tau[kMaxSystemDoF];
+	double tau_dot[kMaxSystemDoF];
+	double tau_ext[kMaxSystemDoF];
+	double tau_interact[kMaxSystemDoF];
+	double temperature[kMaxSystemDoF];
+
 	double tcp_pose[kPoseSize];
 	double tcp_vel[kCartDoF];
 	double flange_pose[kPoseSize];
@@ -71,6 +76,16 @@ struct WRobotState {
 	double ext_wrench_in_world[kCartDoF];
 	double ext_wrench_in_tcp_raw[kCartDoF];
 	double ext_wrench_in_world_raw[kCartDoF];
+};
+
+struct WRobotActions {
+	int32_t system_dof;
+	double q_d[kMaxSystemDoF];
+	double dq_d[kMaxSystemDoF];
+	double tau_d[kMaxSystemDoF];
+	double tcp_pose_d[kPoseSize];
+	double tcp_vel_d[kCartDoF];
+	double ext_wrench_d[kCartDoF];
 };
 
 struct WPlanInfo {
