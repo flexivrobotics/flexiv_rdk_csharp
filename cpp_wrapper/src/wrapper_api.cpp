@@ -648,6 +648,81 @@ EXPORT_API void SendCartesianMotionForce(Robot* robot, const double* pose, int p
 	}
 }
 
+EXPORT_API void SendMultiCartesianMotionForce(Robot* robot,
+    const double* poses, int posesLen,
+    const double* wrenches, int wrenchesLen,
+    const double* twists, int twistsLen,
+    const double* maxLinearVels, int maxLinearVelsLen,
+    const double* maxAngularVels, int maxAngularVelsLen,
+    const double* maxLinearAccs, int maxLinearAccsLen,
+    const double* maxAngularAccs, int maxAngularAccsLen,
+    const double* jointPos, int jointPosLen,
+    int waypointCount,
+    FlexivError* error) {
+    try {
+        if (waypointCount <= 0) {
+            throw std::invalid_argument("SendMultiCartesianMotionForce waypoint count must be positive");
+        }
+        const int systemDof = static_cast<int>(robot->info().DoF);
+        if (systemDof <= 0) {
+            throw std::runtime_error("Invalid robot system DoF");
+        }
+
+        // Validate Cartesian waypoint data.
+        if (posesLen != waypointCount * kPoseSize) {
+            throw std::invalid_argument("SendMultiCartesianMotionForce poses length mismatch");
+        }
+        if (wrenchesLen != waypointCount * kCartDoF) {
+            throw std::invalid_argument("SendMultiCartesianMotionForce wrenches length mismatch");
+        }
+        if (twistsLen != waypointCount * kCartDoF) {
+            throw std::invalid_argument("SendMultiCartesianMotionForce twists length mismatch");
+        }
+
+        // Each waypoint has one value for each motion limit.
+        if (maxLinearVelsLen != waypointCount || maxAngularVelsLen != waypointCount ||
+            maxLinearAccsLen != waypointCount || maxAngularAccsLen != waypointCount) {
+            throw std::invalid_argument("SendMultiCartesianMotionForce motion limit array length mismatch");
+        }
+        // Each joint waypoint must contain full-system DoF values.
+        if (jointPosLen != waypointCount * systemDof) {
+            throw std::invalid_argument("SendMultiCartesianMotionForce joint positions length mismatch");
+        }
+
+        std::vector<NrtCartesianCmd> cartCmds;
+        std::vector<std::vector<double>> jointPositions;
+
+        cartCmds.reserve(waypointCount);
+        jointPositions.reserve(waypointCount);
+
+        for (int i = 0; i < waypointCount; ++i) {
+            std::array<double, kPoseSize> poseD{};
+            std::array<double, kCartDoF> wrenchD{};
+            std::array<double, kCartDoF> twistD{};
+
+            std::copy(poses + i * kPoseSize, poses + (i + 1) * kPoseSize, poseD.begin());
+            std::copy(wrenches + i * kCartDoF, wrenches + (i + 1) * kCartDoF, wrenchD.begin());
+            std::copy(twists + i * kCartDoF, twists + (i + 1) * kCartDoF, twistD.begin());
+            cartCmds.emplace_back(
+    			poseD,
+                wrenchD,
+                twistD,
+                maxLinearVels[i],
+                maxAngularVels[i],
+                maxLinearAccs[i],
+                maxAngularAccs[i]);
+				
+            jointPositions.emplace_back(jointPos + i * systemDof, jointPos + (i + 1) * systemDof);
+        }
+        robot->SendMultiCartesianMotionForce(cartCmds, jointPositions);
+        error->error_code = 0;
+    }
+    catch (const std::exception& e) {
+        error->error_code = 1;
+        CopyExceptionMsg(e, error);
+    }
+}
+
 EXPORT_API void SetCartesianImpedance(Robot* robot, const double* Kx, int KxLen,
 	const double* Zx, int ZxLen, FlexivError* error) {
 	try {

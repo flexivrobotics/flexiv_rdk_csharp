@@ -185,6 +185,20 @@ namespace FlexivRdk
             double maxAngularAcc, ref FlexivError error);
 
         [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SendMultiCartesianMotionForce(
+            IntPtr robot,
+            double[] poses, int posesLen,
+            double[] wrenches, int wrenchesLen,
+            double[] twists, int twistsLen,
+            double[] maxLinearVels, int maxLinearVelsLen,
+            double[] maxAngularVels, int maxAngularVelsLen,
+            double[] maxLinearAccs, int maxLinearAccsLen,
+            double[] maxAngularAccs, int maxAngularAccsLen,
+            double[] jointPos, int jointPosLen,
+            int waypointCount,
+            ref FlexivError error);
+
+        [DllImport(k_flexivRdkDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetCartesianImpedance(IntPtr robot, double[] Kx, int KxLen,
             double[] Zx, int ZxLen, ref FlexivError error);
 
